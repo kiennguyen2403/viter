@@ -6,24 +6,25 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { Supabase } from "../utils/supabase.ts";
 import { verifyToken } from "../utils/auth.ts";
+import { STATUS } from "../type/type.ts";
 
 Deno.serve(async (req) => {
   try {
     const method = req.method;
     const authHeader = req.headers.get("Authorization")!;
     if (!authHeader) {
-      return new Response("Authorization header missing", { status: 401 });
+      return new Response("Authorization header missing", { status: STATUS.UNAUTHORIZED });
     }
     const token = authHeader.replace("Bearer ", "");
     const supabase = Supabase.getInstance(token);
     const payload = await verifyToken(token);
     if (!payload) {
-      return new Response("Unauthorized", { status: 401 });
+      return new Response("Unauthorized", { status: STATUS.UNAUTHORIZED });
     }
     const meetingId = req.url.split("/").pop();
 
     if (!meetingId) {
-      return new Response("Meeting ID is required", { status: 400 });
+      return new Response("Meeting ID is required", { status: STATUS.BAD_REQUEST });
     }
     switch (method) {
       case "GET": {
@@ -32,9 +33,9 @@ Deno.serve(async (req) => {
           .select("*")
           .eq("meeting_id", meetingId);
         if (error) {
-          return new Response(error.message, { status: 500 });
+          return new Response(error.message, { status: STATUS.INTERNAL_SERVER_ERROR });
         }
-        return new Response(JSON.stringify(data), { status: 200 });
+        return new Response(JSON.stringify(data), { status: STATUS.OK });
       }
       case "POST": {
         const body = await req.json();
@@ -45,19 +46,19 @@ Deno.serve(async (req) => {
           },
         ]);
         if (error) {
-          return new Response(error.message, { status: 500 });
+          return new Response(error.message, { status: STATUS.INTERNAL_SERVER_ERROR });
         }
-        return new Response(JSON.stringify(data), { status: 200 });
+        return new Response(JSON.stringify(data), { status: STATUS.CREATED });
       }
       default: {
-        return new Response("Method not allowed", { status: 405 });
+        return new Response("Method not allowed", { status: STATUS.METHOD_NOT_ALLOWED });
       }
     }
   } catch (error) {
     if (error instanceof Error) {
-      return new Response(error.message, { status: 500 });
+      return new Response(error.message, { status: STATUS.INTERNAL_SERVER_ERROR });
     } else {
-      return new Response("An unknown error occurred", { status: 500 });
+      return new Response("An unknown error occurred", { status: STATUS.INTERNAL_SERVER_ERROR });
     }
   }
 });

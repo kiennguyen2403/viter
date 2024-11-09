@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { Supabase } from "../utils/supabase.ts";
 import { verifyToken } from "../utils/auth.ts";
+import { STATUS } from "../type/type.ts";
 
 Deno.serve(async (req) => {
   try {
@@ -8,7 +9,7 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
 
     if (!authHeader) {
-      return new Response("Authorization header missing", { status: 401 });
+      return new Response("Authorization header missing", { status: STATUS.UNAUTHORIZED });
     }
 
     const token = authHeader.replace("Bearer ", "");
@@ -16,7 +17,7 @@ Deno.serve(async (req) => {
     const payload = await verifyToken(token);
 
     if (!payload) {
-      return new Response("Unauthorized", { status: 401 });
+      return new Response("Unauthorized", { status: STATUS.UNAUTHORIZED });
     }
 
     const { data: user, error: userError } = await supabase
@@ -26,7 +27,7 @@ Deno.serve(async (req) => {
       .single();
 
     if (userError) {
-      return new Response(userError.message, { status: 401 });
+      return new Response(userError.message, { status: STATUS.UNAUTHORIZED });
     }
 
     switch (method) {
@@ -37,7 +38,7 @@ Deno.serve(async (req) => {
           .eq("user_id", user.id);
 
         if (resumeError) {
-          return new Response(resumeError.message, { status: 500 });
+          return new Response(resumeError.message, { status: STATUS.INTERNAL_SERVER_ERROR });
         }
 
         await Promise.all(
@@ -60,7 +61,7 @@ Deno.serve(async (req) => {
         );
 
         return new Response(JSON.stringify(resume), {
-          status: 200,
+          status: STATUS.OK,
           headers: { "Content-Type": "application/json" },
         });
       }
@@ -70,7 +71,7 @@ Deno.serve(async (req) => {
           const formData = await req.formData();
           const file = formData.get("file") as File | null;
           if (!file) {
-            return new Response("File missing in request", { status: 400 });
+            return new Response("File missing in request", { status: STATUS.BAD_REQUEST });
           }
 
           const fileName = file.name.split("\\").pop()!;
@@ -80,33 +81,32 @@ Deno.serve(async (req) => {
 
           if (error) {
             return new Response(JSON.stringify(error), {
-              status: 400,
+              status: STATUS.BAD_REQUEST,
               headers: { "Content-Type": "application/json" },
             });
           }
 
           const { error: recordingError } = await supabase
-            .from("resume")
+            .from("resumes")
             .insert([{ userId: user.id, bucket: data.id, fileName }]);
 
           if (recordingError) {
-            return new Response(recordingError.message, { status: 500 });
+            return new Response(recordingError.message, { status: STATUS.INTERNAL_SERVER_ERROR });
           }
 
-          return new Response(null, { status: 204 });
+          return new Response(null, { status: STATUS.CREATED });
         } catch (uploadError) {
           console.error("Error in file upload:", uploadError);
-          return new Response("Error in file upload", { status: 500 });
+          return new Response("Error in file upload", { status: STATUS.INTERNAL_SERVER_ERROR });
         }
       }
 
       default:
-        return new Response("Method not allowed", { status: 405 });
+        return new Response("Method not allowed", { status: STATUS.METHOD_NOT_ALLOWED });
     }
   } catch (error) {
-    console.error("Server error:", error);
     return new Response(error instanceof Error ? error.message : "An unknown error occurred", {
-      status: 500,
+      status: STATUS.INTERNAL_SERVER_ERROR,
     });
   }
 });

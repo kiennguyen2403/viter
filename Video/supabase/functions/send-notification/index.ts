@@ -5,6 +5,7 @@
 // Setup type definitions for built-in Supabase Runtime APIs
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { Supabase } from "../utils/supabase.ts";
+import { STATUS } from "../type/type.ts";
 
 const sendEmail = async (email: string, subject: string, message: string) => {
   const res = await fetch("https://api.resend.com/emails", {
@@ -39,7 +40,7 @@ Deno.serve(async (req) => {
   if (errorParticipant || !participant) {
     return new Response(
       JSON.stringify({ error: "Failed to fetch participants" }),
-      { status: 500 },
+      { status: STATUS.INTERNAL_SERVER_ERROR },
     );
   }
 
@@ -52,7 +53,10 @@ Deno.serve(async (req) => {
 
   return new Response(
     JSON.stringify(data),
-    { headers: { "Content-Type": "application/json" } },
+    {
+      status: STATUS.OK,
+      headers: { "Content-Type": "application/json" }
+    },
   );
 });
 

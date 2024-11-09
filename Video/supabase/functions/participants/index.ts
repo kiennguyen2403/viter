@@ -6,19 +6,20 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { Supabase } from "../utils/supabase.ts";
 import { verifyToken } from "../utils/auth.ts";
+import { STATUS } from "../type/type.ts";
 
 Deno.serve(async (req) => {
   const method = req.method;
 
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) {
-    return new Response("Authorization header missing", { status: 401 });
+    return new Response("Authorization header missing", { status: STATUS.UNAUTHORIZED });
   }
   const token = authHeader.replace("Bearer ", "");
   const supabase = Supabase.getInstance(token);
   const payload = await verifyToken(token);
   if (!payload) {
-    return new Response("Unauthorized", { status: 401 });
+    return new Response("Unauthorized", { status: STATUS.UNAUTHORIZED });
   }
 
   const { data: userData, error: userError } = await supabase
@@ -29,7 +30,7 @@ Deno.serve(async (req) => {
       payload.sub,
     ).single();
   if (userError) {
-    return new Response(userError.message, { status: 500 });
+    return new Response(userError.message, { status: STATUS.UNAUTHORIZED });
   }
   const id = req.url.split("/").pop();
   switch (method) {
@@ -42,9 +43,9 @@ Deno.serve(async (req) => {
           .eq("user_id", userData.id)
           .single();
         if (error) {
-          return new Response(error.message, { status: 500 });
+          return new Response(error.message, { status: STATUS.INTERNAL_SERVER_ERROR });
         }
-        return new Response(JSON.stringify(data), { status: 200 });
+        return new Response(JSON.stringify(data), { status: STATUS.OK });
       } else {
         const { data, error } = await supabase
           .from("participants")
@@ -53,9 +54,9 @@ Deno.serve(async (req) => {
           .order("created_at", { ascending: false });
 
         if (error) {
-          return new Response(error.message, { status: 500 });
+          return new Response(error.message, { status: STATUS.INTERNAL_SERVER_ERROR });
         }
-        return new Response(JSON.stringify(data), { status: 200 });
+        return new Response(JSON.stringify(data), { status: STATUS.OK });
       }
     }
     case "POST": {
@@ -67,13 +68,13 @@ Deno.serve(async (req) => {
         },
       ]);
       if (error) {
-        return new Response(error.message, { status: 500 });
+        return new Response(error.message, { status: STATUS.INTERNAL_SERVER_ERROR });
       }
-      return new Response(JSON.stringify(data), { status: 200 });
+      return new Response(JSON.stringify(data), { status: STATUS.CREATED });
     }
     case "PUT": {
       if (!id) {
-        return new Response("Missing meeting ID", { status: 400 });
+        return new Response("Missing meeting ID", { status: STATUS.BAD_REQUEST });
       }
       const { data: meetingData, error: meetingError } = await supabase
         .from("meetings")
@@ -81,7 +82,7 @@ Deno.serve(async (req) => {
         .eq("nano_id", id)
         .single();
       if (meetingError) {
-        return new Response(meetingError.message, { status: 500 });
+        return new Response(meetingError.message, { status: STATUS.INTERNAL_SERVER_ERROR });
       }
       const body = await req.json();
       const { data, error } = await supabase.from("participants")
@@ -93,25 +94,25 @@ Deno.serve(async (req) => {
         .eq("meeting_id", meetingData.id)
         .eq("user_id", userData.id);
       if (error) {
-        return new Response(error.message, { status: 500 });
+        return new Response(error.message, { status: STATUS.INTERNAL_SERVER_ERROR });
       }
-      return new Response(JSON.stringify(data), { status: 200 });
+      return new Response(JSON.stringify(data), { status: STATUS.OK });
     }
     case "DELETE": {
       if (!id) {
-        return new Response("Missing participant ID", { status: 400 });
+        return new Response("Missing participant ID", { status: STATUS.BAD_REQUEST });
       }
       const { data, error } = await supabase
-        .from("participant")
+        .from("participants")
         .delete()
         .eq("id", id,);
       if (error) {
-        return new Response(error.message, { status: 500 });
+        return new Response(error.message, { status: STATUS.INTERNAL_SERVER_ERROR });
       }
-      return new Response(JSON.stringify(data), { status: 200 });
+      return new Response(JSON.stringify(data), { status: STATUS.OK });
     }
     default: {
-      return new Response("Method Not Allowed", { status: 405 });
+      return new Response("Method Not Allowed", { status: STATUS.METHOD_NOT_ALLOWED });
     }
   }
 });
