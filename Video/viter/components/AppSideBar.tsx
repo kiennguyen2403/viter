@@ -16,6 +16,7 @@ import UserButton from "./UserButton";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import { Button } from "react-day-picker";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 // Menu items.
 const items = [
@@ -49,21 +50,21 @@ export function AppSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>
-            <a href="/#" className="flex items-center w-50 mr-5">
+            <Link href="/#" className="flex items-center w-50 mr-5">
               <div className="font-product-sans text-2xl leading-6 text-meet-gray select-none">
                 <span className="font-medium">Scrunity </span>
               </div>
-            </a>
+            </Link>
           </SidebarGroupLabel>
           <SidebarGroupContent className="mt-3">
             <SidebarMenu>
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <a href={item.url}>
+                    <Link href={item.url}>
                       <item.icon />
                       <span>{item.title}</span>
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}

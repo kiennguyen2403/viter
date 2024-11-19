@@ -6,6 +6,7 @@ import { CallingState, useCallStateHooks } from "@stream-io/video-react-sdk";
 import { Button } from "@/components/ui/button";
 import axios from "axios";
 import { useUser } from "@auth0/nextjs-auth0/client";
+import Link from "next/link";
 
 interface MeetingEndProps {
   params: {
@@ -105,9 +106,9 @@ const MeetingEnd = ({ params, searchParams }: MeetingEndProps) => {
             <p>
               https://{window.location.host}/
               <span className="font-extrabold">xxx-yyyy-zzz</span>
-              <a href="#" className="ml-2 text-primary">
+              <Link href="#" className="ml-2 text-primary">
                 Learn more
-              </a>
+              </Link>
             </p>
           </div>
         )}

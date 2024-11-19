@@ -2,6 +2,7 @@
 import React from "react";
 import { useEffect, useRef } from "react";
 import lottie, { AnimationItem } from "lottie-web";
+import Link from "next/link";
 
 const Page = () => {
   const animationContainer = useRef(null);
@@ -36,9 +37,9 @@ const Page = () => {
         interview!
       </p>
       <div className="w-20 h-20 mt-10" ref={animationContainer}></div>
-      <a href="/" className="mt-4 text-blue-500 hover:bg-blue-100 p-1 rounded">
+      <Link href="/" className="mt-4 text-blue-500 hover:bg-blue-100 p-1 rounded">
         Go back to home
-      </a>
+      </Link>
     </div>
   );
 };

@@ -17,6 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Mail from "./icons/Mail";
+import Link from "next/link";
 
 interface HeaderProps {
   navItems?: boolean;
@@ -175,11 +176,11 @@ const Header = ({ navItems = true, isSidebarOpen = false }: HeaderProps) => {
       <div className="w-full sm:w-auto flex items-center cursor-default mb-2 sm:mb-0">
         {!isSidebarOpen && (
           <>
-            <a href="/#" className="flex items-center w-50 mr-5">
+            <Link href="/#" className="flex items-center w-50 mr-5">
               <div className="font-product-sans text-2xl leading-6 text-meet-gray select-none">
                 <span className="font-medium">Scrunity</span>
               </div>
-            </a>
+            </Link>
             <Button
               variant="ghost"
               size="sm"

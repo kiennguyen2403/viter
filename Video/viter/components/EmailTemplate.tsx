@@ -1,4 +1,5 @@
 import * as React from "react";
+import Link from "next/link";
 
 interface EmailTemplateProps {
   firstName: string;
@@ -21,7 +22,7 @@ export const EmailTemplate: React.FC<Readonly<EmailTemplateProps>> = ({
       on {meeting.date}.
     </p>
     <p>
-      Please click <a href={inviteLink}>here</a> to confirm your participant.
+      Please click <Link href={inviteLink}>here</Link> to confirm your participant.
     </p>
   </div>
 );
