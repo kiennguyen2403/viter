@@ -1,5 +1,6 @@
 import React from 'react';
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface KeepOffFilledProps {}
 
 const KeepOffFilled = ({}: KeepOffFilledProps) => {

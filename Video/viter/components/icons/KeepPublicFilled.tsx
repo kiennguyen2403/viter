@@ -1,5 +1,6 @@
 import React from 'react';
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface KeepPublicFilledProps {}
 
 const KeepPublicFilled = ({}: KeepPublicFilledProps) => {
