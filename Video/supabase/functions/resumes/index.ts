@@ -2,14 +2,22 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { Supabase } from "../utils/supabase.ts";
 import { verifyToken } from "../utils/auth.ts";
 import { STATUS } from "../type/type.ts";
+import { corsHeaders } from "../_shared/cors.ts";
 
 Deno.serve(async (req) => {
   try {
     const method = req.method;
+
+    if (method === "OPTIONS") {
+      return new Response("ok", { headers: corsHeaders });
+    }
+    
     const authHeader = req.headers.get("Authorization");
 
     if (!authHeader) {
-      return new Response("Authorization header missing", { status: STATUS.UNAUTHORIZED });
+      return new Response("Authorization header missing", {
+        status: STATUS.UNAUTHORIZED,
+      });
     }
 
     const token = authHeader.replace("Bearer ", "");
@@ -38,26 +46,35 @@ Deno.serve(async (req) => {
           .eq("user_id", user.id);
 
         if (resumeError) {
-          return new Response(resumeError.message, { status: STATUS.INTERNAL_SERVER_ERROR });
+          return new Response(resumeError.message, {
+            status: STATUS.INTERNAL_SERVER_ERROR,
+          });
         }
 
         await Promise.all(
-          resume.map(async (r: { fileName: any; signedUrlError: any; signedUrl: any; }) => {
-            try {
-              const { data, error } = await supabase.storage
-                .from("storages")
-                .createSignedUrl(r.fileName, 60);
+          resume.map(
+            async (
+              r: { fileName: any; signedUrlError: any; signedUrl: any },
+            ) => {
+              try {
+                const { data, error } = await supabase.storage
+                  .from("storages")
+                  .createSignedUrl(r.fileName, 60);
 
-              if (error) {
-                console.error(`Error creating signed URL for ${r.fileName}:`, error.message);
-                r.signedUrlError = error.message;
-              } else {
-                r.signedUrl = data?.signedUrl;
+                if (error) {
+                  console.error(
+                    `Error creating signed URL for ${r.fileName}:`,
+                    error.message,
+                  );
+                  r.signedUrlError = error.message;
+                } else {
+                  r.signedUrl = data?.signedUrl;
+                }
+              } catch (err) {
+                console.error(`Unexpected error for ${r.fileName}:`, err);
               }
-            } catch (err) {
-              console.error(`Unexpected error for ${r.fileName}:`, err);
-            }
-          })
+            },
+          ),
         );
 
         return new Response(JSON.stringify(resume), {
@@ -71,7 +88,9 @@ Deno.serve(async (req) => {
           const formData = await req.formData();
           const file = formData.get("file") as File | null;
           if (!file) {
-            return new Response("File missing in request", { status: STATUS.BAD_REQUEST });
+            return new Response("File missing in request", {
+              status: STATUS.BAD_REQUEST,
+            });
           }
 
           const fileName = file.name.split("\\").pop()!;
@@ -91,22 +110,31 @@ Deno.serve(async (req) => {
             .insert([{ userId: user.id, bucket: data.id, fileName }]);
 
           if (recordingError) {
-            return new Response(recordingError.message, { status: STATUS.INTERNAL_SERVER_ERROR });
+            return new Response(recordingError.message, {
+              status: STATUS.INTERNAL_SERVER_ERROR,
+            });
           }
 
           return new Response(null, { status: STATUS.CREATED });
         } catch (uploadError) {
           console.error("Error in file upload:", uploadError);
-          return new Response("Error in file upload", { status: STATUS.INTERNAL_SERVER_ERROR });
+          return new Response("Error in file upload", {
+            status: STATUS.INTERNAL_SERVER_ERROR,
+          });
         }
       }
 
       default:
-        return new Response("Method not allowed", { status: STATUS.METHOD_NOT_ALLOWED });
+        return new Response("Method not allowed", {
+          status: STATUS.METHOD_NOT_ALLOWED,
+        });
     }
   } catch (error) {
-    return new Response(error instanceof Error ? error.message : "An unknown error occurred", {
-      status: STATUS.INTERNAL_SERVER_ERROR,
-    });
+    return new Response(
+      error instanceof Error ? error.message : "An unknown error occurred",
+      {
+        status: STATUS.INTERNAL_SERVER_ERROR,
+      },
+    );
   }
 });

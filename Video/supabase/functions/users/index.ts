@@ -6,11 +6,14 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { Supabase } from "../utils/supabase.ts";
 import { verifyToken } from "../utils/auth.ts";
+import { corsHeaders } from "../_shared/cors.ts";
 
 Deno.serve(async (req) => {
   try {
     const method = req.method;
-
+    if (method === "OPTIONS") {
+      return new Response("ok", { headers: corsHeaders });
+    }
     const authHeader = req.headers.get("Authorization")!;
     if (!authHeader) {
       return new Response("Authorization header missing", { status: 401 });
@@ -18,6 +21,7 @@ Deno.serve(async (req) => {
     const token = authHeader.replace("Bearer ", "");
     const supabase = Supabase.getInstance(token);
     const payload = await verifyToken(token);
+
     if (!payload) {
       return new Response("Unauthorized", { status: 401 });
     }
@@ -33,26 +37,44 @@ Deno.serve(async (req) => {
           ).single();
 
         if (userError) {
-          return new Response(userError.message, { status: 401 });
+          return new Response(userError.message, {
+            status: 401,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
         }
         const id = req.url.split("/").pop();
         if (id == "all") {
           if (userData.role !== "ADMIN") {
-            return new Response("Unauthorized", { status: 401 });
+            return new Response("Unauthorized", {
+              status: 401,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
           }
           const { data, error } = await supabase
             .from("users")
             .select("*");
 
           if (error) {
-            return new Response(error.message, { status: 500 });
+            return new Response(error.message, {
+              status: 500,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
           }
-          return new Response(JSON.stringify(data), { status: 200 });
+          return new Response(JSON.stringify(data), {
+            status: 200,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
         } else if (id == "me") {
           if (userData.count === 0) {
-            return new Response("User not found", { status: 404 });
+            return new Response("User not found", {
+              status: 404,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
           }
-          return new Response(JSON.stringify(userData), { status: 200 });
+          return new Response(JSON.stringify(userData), {
+            status: 200,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
         } else {
           const { data, error } = await supabase
             .from("users")
@@ -60,9 +82,15 @@ Deno.serve(async (req) => {
             .eq("id", id);
 
           if (error) {
-            return new Response(error.message, { status: 500 });
+            return new Response(error.message, {
+              status: 500,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
           }
-          return new Response(JSON.stringify(data), { status: 200 });
+          return new Response(JSON.stringify(data), {
+            status: 200,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
         }
       }
       case "POST": {
@@ -74,7 +102,10 @@ Deno.serve(async (req) => {
             payload.sub,
           ).single();
         if (userData) {
-          return new Response(JSON.stringify(userData), { status: 200 });
+          return new Response(JSON.stringify(userData), {
+            status: 200,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
         }
         const body = await req.json();
         const { data, error } = await supabase.from("users")
@@ -87,9 +118,15 @@ Deno.serve(async (req) => {
             payload.sub,
           );
         if (error) {
-          return new Response(error.message, { status: 500 });
+          return new Response(error.message, {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
         }
-        return new Response(JSON.stringify(data), { status: 200 });
+        return new Response(JSON.stringify(data), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
       case "PUT": {
         const { data: userData, error: userError } = await supabase
@@ -101,7 +138,10 @@ Deno.serve(async (req) => {
           ).single();
 
         if (userError) {
-          return new Response(userError.message, { status: 401 });
+          return new Response(userError.message, {
+            status: 401,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
         }
         const body = await req.json();
         const { data, error } = await supabase
@@ -112,9 +152,15 @@ Deno.serve(async (req) => {
             userData.id,
           );
         if (error) {
-          return new Response(error.message, { status: 500 });
+          return new Response(error.message, {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
         }
-        return new Response(JSON.stringify(data), { status: 200 });
+        return new Response(JSON.stringify(data), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
       case "DELETE": {
         const { data: userData, error: userError } = await supabase
@@ -126,7 +172,10 @@ Deno.serve(async (req) => {
           ).single();
 
         if (userError) {
-          return new Response(userError.message, { status: 401 });
+          return new Response(userError.message, {
+            status: 401,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
         }
         const { data, error } = await supabase
           .from("users")
@@ -136,19 +185,34 @@ Deno.serve(async (req) => {
             userData.id,
           );
         if (error) {
-          return new Response(error.message, { status: 500 });
+          return new Response(error.message, {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
         }
-        return new Response(JSON.stringify(data), { status: 200 });
+        return new Response(JSON.stringify(data), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
       default: {
-        return new Response("Method not allowed", { status: 405 });
+        return new Response("Method not allowed", {
+          status: 405,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
     }
   } catch (error) {
     if (error instanceof Error) {
-      return new Response(error.message, { status: 500 });
+      return new Response(error.message, {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     } else {
-      return new Response("An unknown error occurred", { status: 500 });
+      return new Response("An unknown error occurred", {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
   }
 });

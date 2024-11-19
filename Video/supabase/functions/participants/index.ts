@@ -7,112 +7,183 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { Supabase } from "../utils/supabase.ts";
 import { verifyToken } from "../utils/auth.ts";
 import { STATUS } from "../type/type.ts";
+import { corsHeaders } from "../_shared/cors.ts";
 
 Deno.serve(async (req) => {
-  const method = req.method;
+  try {
+    const method = req.method;
 
-  const authHeader = req.headers.get("Authorization");
-  if (!authHeader) {
-    return new Response("Authorization header missing", { status: STATUS.UNAUTHORIZED });
-  }
-  const token = authHeader.replace("Bearer ", "");
-  const supabase = Supabase.getInstance(token);
-  const payload = await verifyToken(token);
-  if (!payload) {
-    return new Response("Unauthorized", { status: STATUS.UNAUTHORIZED });
-  }
+    if (method === "OPTIONS") {
+      return new Response("ok", { headers: corsHeaders });
+    }
+    console.log("req", req);
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response("Authorization header missing", {
+        status: STATUS.UNAUTHORIZED,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const token = authHeader.replace("Bearer ", "");
+    const supabase = Supabase.getInstance(token);
+    const payload = await verifyToken(token);
 
-  const { data: userData, error: userError } = await supabase
-    .from("users")
-    .select("*")
-    .eq(
-      "token_identifier",
-      payload.sub,
-    ).single();
-  if (userError) {
-    return new Response(userError.message, { status: STATUS.UNAUTHORIZED });
-  }
-  const id = req.url.split("/").pop();
-  switch (method) {
-    case "GET": {
-      if (id) {
-        const { data, error } = await supabase
-          .from("participants")
+    if (!payload) {
+      return new Response("Unauthorized", {
+        status: STATUS.UNAUTHORIZED,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { data: userData, error: userError } = await supabase
+      .from("users")
+      .select("*")
+      .eq(
+        "token_identifier",
+        payload.sub,
+      ).single();
+  
+    if (userError) {
+      return new Response(userError.message, {
+        status: STATUS.UNAUTHORIZED,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const id = req.url.split("/").pop();
+    switch (method) {
+      case "GET": {
+        if (id) {
+          const { data, error } = await supabase
+            .from("participants")
+            .select("*")
+            .eq("meeting_id", id)
+            .eq("user_id", userData.id)
+            .single();
+          if (error) {
+            return new Response(error.message, {
+              status: STATUS.INTERNAL_SERVER_ERROR,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+          return new Response(JSON.stringify(data), {
+            status: STATUS.OK,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        } else {
+          const { data, error } = await supabase
+            .from("participants")
+            .select("*")
+            .eq("user_id", userData.id)
+            .order("created_at", { ascending: false });
+
+          if (error) {
+            return new Response(error.message, {
+              status: STATUS.INTERNAL_SERVER_ERROR,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+          return new Response(JSON.stringify(data), {
+            status: STATUS.OK,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      }
+      case "POST": {
+        const body = await req.json();
+        const { data, error } = await supabase.from("participants").upsert([
+          {
+            ...body,
+            user_id: userData.id,
+          },
+        ]);
+        if (error) {
+          return new Response(error.message, {
+            status: STATUS.INTERNAL_SERVER_ERROR,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        return new Response(JSON.stringify(data), {
+          status: STATUS.CREATED,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      case "PUT": {
+        if (!id) {
+          return new Response("Missing meeting ID", {
+            status: STATUS.BAD_REQUEST,
+          });
+        }
+        const { data: meetingData, error: meetingError } = await supabase
+          .from("meetings")
           .select("*")
-          .eq("meeting_id", id)
-          .eq("user_id", userData.id)
+          .eq("nano_id", id)
           .single();
-        if (error) {
-          return new Response(error.message, { status: STATUS.INTERNAL_SERVER_ERROR });
+        if (meetingError) {
+          return new Response(meetingError.message, {
+            status: STATUS.INTERNAL_SERVER_ERROR,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
         }
-        return new Response(JSON.stringify(data), { status: STATUS.OK });
-      } else {
+        const body = await req.json();
+        const { data, error } = await supabase.from("participants")
+          .upsert({
+            ...body,
+            user_id: userData.id,
+            meeting_id: meetingData.id,
+          })
+          .eq("meeting_id", meetingData.id)
+          .eq("user_id", userData.id);
+        if (error) {
+          return new Response(error.message, {
+            status: STATUS.INTERNAL_SERVER_ERROR,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        return new Response(JSON.stringify(data), {
+          status: STATUS.OK,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      case "DELETE": {
+        if (!id) {
+          return new Response("Missing participant ID", {
+            status: STATUS.BAD_REQUEST,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
         const { data, error } = await supabase
           .from("participants")
-          .select("*")
-          .eq("user_id", userData.id)
-          .order("created_at", { ascending: false });
-
+          .delete()
+          .eq("id", id);
         if (error) {
-          return new Response(error.message, { status: STATUS.INTERNAL_SERVER_ERROR });
+          return new Response(error.message, {
+            status: STATUS.INTERNAL_SERVER_ERROR,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
         }
-        return new Response(JSON.stringify(data), { status: STATUS.OK });
+        return new Response(JSON.stringify(data), {
+          status: STATUS.OK,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      default: {
+        return new Response("Method Not Allowed", {
+          status: STATUS.METHOD_NOT_ALLOWED,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
     }
-    case "POST": {
-      const body = await req.json();
-      const { data, error } = await supabase.from("participants").upsert([
-        {
-          ...body,
-          user_id: userData.id,
-        },
-      ]);
-      if (error) {
-        return new Response(error.message, { status: STATUS.INTERNAL_SERVER_ERROR });
-      }
-      return new Response(JSON.stringify(data), { status: STATUS.CREATED });
-    }
-    case "PUT": {
-      if (!id) {
-        return new Response("Missing meeting ID", { status: STATUS.BAD_REQUEST });
-      }
-      const { data: meetingData, error: meetingError } = await supabase
-        .from("meetings")
-        .select("*")
-        .eq("nano_id", id)
-        .single();
-      if (meetingError) {
-        return new Response(meetingError.message, { status: STATUS.INTERNAL_SERVER_ERROR });
-      }
-      const body = await req.json();
-      const { data, error } = await supabase.from("participants")
-        .upsert({
-          ...body,
-          userId: userData.id,
-          meetingId: meetingData.id,
-        })
-        .eq("meeting_id", meetingData.id)
-        .eq("user_id", userData.id);
-      if (error) {
-        return new Response(error.message, { status: STATUS.INTERNAL_SERVER_ERROR });
-      }
-      return new Response(JSON.stringify(data), { status: STATUS.OK });
-    }
-    case "DELETE": {
-      if (!id) {
-        return new Response("Missing participant ID", { status: STATUS.BAD_REQUEST });
-      }
-      const { data, error } = await supabase
-        .from("participants")
-        .delete()
-        .eq("id", id,);
-      if (error) {
-        return new Response(error.message, { status: STATUS.INTERNAL_SERVER_ERROR });
-      }
-      return new Response(JSON.stringify(data), { status: STATUS.OK });
-    }
-    default: {
-      return new Response("Method Not Allowed", { status: STATUS.METHOD_NOT_ALLOWED });
+  } catch (error) {
+    if (error instanceof Error) {
+      return new Response(error.message, {
+        status: STATUS.INTERNAL_SERVER_ERROR,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    } else {
+      return new Response("An unknown error occurred", {
+        status: STATUS.INTERNAL_SERVER_ERROR,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
   }
 });

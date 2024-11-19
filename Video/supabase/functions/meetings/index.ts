@@ -2,17 +2,29 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { Supabase } from "../utils/supabase.ts";
 import { verifyToken } from "../utils/auth.ts";
 import { STATUS } from "../type/type.ts";
+import { corsHeaders } from "../_shared/cors.ts";
 
 Deno.serve(async (req) => {
   try {
+    const method = req.method;
+
+    if (method === "OPTIONS") {
+      return new Response("ok", { headers: corsHeaders });
+    }
+
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      return new Response("Authorization header missing", { status: STATUS.UNAUTHORIZED });
+      return new Response("Authorization header missing", {
+        status: STATUS.UNAUTHORIZED,
+      });
     }
 
     const token = authHeader.replace("Bearer ", "");
     const payload = await verifyToken(token);
-    if (!payload) return new Response("Unauthorized", { status: STATUS.UNAUTHORIZED });
+
+    if (!payload) {
+      return new Response("Unauthorized", { status: STATUS.UNAUTHORIZED });
+    }
 
     const { data: userData, error: userError } = await Supabase.getInstance(
       token,
@@ -29,7 +41,7 @@ Deno.serve(async (req) => {
     }
 
     const supabase = Supabase.getInstance(token);
-    const method = req.method;
+
     const query = new URL(req.url).searchParams;
     const nanoid = query.get("nanoid");
     const id = query.get("id");
@@ -48,7 +60,11 @@ Deno.serve(async (req) => {
               status: STATUS.INTERNAL_SERVER_ERROR,
             });
           }
-          if (!data) return new Response("Meeting not found", { status: STATUS.NOT_FOUND });
+          if (!data) {
+            return new Response("Meeting not found", {
+              status: STATUS.NOT_FOUND,
+            });
+          }
 
           return new Response(JSON.stringify(data), { status: STATUS.OK });
         }
@@ -65,7 +81,11 @@ Deno.serve(async (req) => {
               status: STATUS.INTERNAL_SERVER_ERROR,
             });
           }
-          if (!data) return new Response("Meeting not found", { status: STATUS.NOT_FOUND });
+          if (!data) {
+            return new Response("Meeting not found", {
+              status: STATUS.NOT_FOUND,
+            });
+          }
 
           return new Response(JSON.stringify(data), { status: STATUS.OK });
         }
@@ -99,7 +119,11 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify(data), { status: STATUS.OK });
       }
       case "PUT": {
-        if (!id) return new Response("Meeting ID required", { status: STATUS.BAD_REQUEST });
+        if (!id) {
+          return new Response("Meeting ID required", {
+            status: STATUS.BAD_REQUEST,
+          });
+        }
 
         const body = await req.json();
         const { error } = await supabase
@@ -116,7 +140,11 @@ Deno.serve(async (req) => {
         return new Response("Meeting updated", { status: STATUS.OK });
       }
       case "DELETE": {
-        if (!id) return new Response("Meeting ID required", { status: STATUS.BAD_REQUEST });
+        if (!id) {
+          return new Response("Meeting ID required", {
+            status: STATUS.BAD_REQUEST,
+          });
+        }
 
         const { error } = await supabase
           .from("meetings")
@@ -132,13 +160,19 @@ Deno.serve(async (req) => {
         return new Response("Meeting deleted", { status: STATUS.OK });
       }
       default:
-        return new Response("Method not allowed", { status: STATUS.METHOD_NOT_ALLOWED });
+        return new Response("Method not allowed", {
+          status: STATUS.METHOD_NOT_ALLOWED,
+        });
     }
   } catch (error) {
     if (error instanceof Error) {
-      return new Response(error.message, { status: STATUS.INTERNAL_SERVER_ERROR });
+      return new Response(error.message, {
+        status: STATUS.INTERNAL_SERVER_ERROR,
+      });
     } else {
-      return new Response("An unknown error occurred", { status: STATUS.INTERNAL_SERVER_ERROR });
+      return new Response("An unknown error occurred", {
+        status: STATUS.INTERNAL_SERVER_ERROR,
+      });
     }
   }
 });
