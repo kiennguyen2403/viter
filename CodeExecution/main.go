@@ -17,6 +17,10 @@ func main() {
 		os.Exit(1)
 	}
 
+
+	engine.RegisterEndpoint(http.MethodGet, "/health", handler.HealthCheck)
+	
+	engine.RegisterEndpoint(http.MethodOptions, "/execute", handler.CORS)
 	engine.RegisterEndpoint(http.MethodPost, "/execute", handler.Handler)
 
 	if err := cli.New().Run(); err != nil {

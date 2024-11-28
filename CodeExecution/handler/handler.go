@@ -99,6 +99,18 @@ func buildTask(er RequestBody) (input.Task, error) {
 		image = "python:3"
 		filename = "script.py"
 		run = "python script.py > $TORK_OUTPUT"
+	case "node":
+		image = "node:16"
+		filename = "script.js"
+		run = "node script.js > $TORK_OUTPUT"
+	case "java":
+		image = "openjdk:17"
+		filename = "Main.java"
+		run = "javac Main.java && java Main > $TORK_OUTPUT"
+	case "c++":
+		image = "gcc:11"
+		filename = "main.cpp"
+		run = "g++ main.cpp -o main && ./main > $TORK_OUTPUT"
 	case "go":
 		image = "golang:1.19"
 		filename = "main.go"
@@ -124,4 +136,16 @@ func buildTask(er RequestBody) (input.Task, error) {
 			filename: er.Record.Message.Code,
 		},
 	}, nil
+}
+
+
+func HealthCheck(c web.Context) error {
+	return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
+}
+
+func CORS(c web.Context) error {
+	c.Response().Header().Set("Access-Control-Allow-Origin", "*")
+	c.Response().Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+	c.Response().Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	return nil
 }
