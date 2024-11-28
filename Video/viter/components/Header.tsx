@@ -178,7 +178,7 @@ const Header = ({ navItems = true, isSidebarOpen = false }: HeaderProps) => {
           <>
             <Link href="/#" className="flex items-center w-50 mr-5">
               <div className="font-product-sans text-2xl leading-6 text-meet-gray select-none">
-                <span className="font-medium">Scrunity</span>
+                <span className="font-medium">Viter</span>
               </div>
             </Link>
             <Button

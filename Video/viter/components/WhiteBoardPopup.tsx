@@ -1,5 +1,4 @@
 import { useEffect, useState, useRef } from "react";
-import { useRouter } from "next/navigation";
 import Popup from "./Popup";
 import Spinner from "./Spinner";
 
@@ -14,13 +13,37 @@ const WhiteboardPopup = ({
   onClose,
   onOpenChange,
 }: WhiteboardPopupProps) => {
-  const router = useRouter();
   const [identifier, setIdentifier] = useState<string | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const hasCreatedPaperRef = useRef(false);
   const hasRequestedAccessRef = useRef(false);
 
   useEffect(() => {
+    const createPaper = async () => {
+      try {
+        hasCreatedPaperRef.current = true; // Set the ref to prevent further calls
+        const response = await fetch("https://api.pixelpaper.io/api/paper", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${process.env.NEXT_PUBLIC_WHITE_BOARD_API}`,
+          },
+          body: JSON.stringify({ name: "My First PixelPaper" }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setIdentifier(data.identifier);
+          if (!hasRequestedAccessRef.current) {
+            await requestAccessToken(data.identifier);
+          }
+        } else {
+          console.error("Failed to create paper:", response.statusText);
+        }
+      } catch (error) {
+        console.error("Error creating paper:", error);
+      }
+    };
     if (onOpenChange) {
       onOpenChange(isOpen);
     }
@@ -29,33 +52,6 @@ const WhiteboardPopup = ({
       createPaper();
     }
   }, [isOpen, onOpenChange]);
-
-  const createPaper = async () => {
-    try {
-      console.log("Creating paper...", process.env.NEXT_PUBLIC_WHITE_BOARD_API);
-      hasCreatedPaperRef.current = true; // Set the ref to prevent further calls
-      const response = await fetch("https://api.pixelpaper.io/api/paper", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_WHITE_BOARD_API}`,
-        },
-        body: JSON.stringify({ name: "My First PixelPaper" }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setIdentifier(data.identifier);
-        if (!hasRequestedAccessRef.current) {
-          await requestAccessToken(data.identifier);
-        }
-      } else {
-        console.error("Failed to create paper:", response.statusText);
-      }
-    } catch (error) {
-      console.error("Error creating paper:", error);
-    }
-  };
 
   const requestAccessToken = async (identifier: string) => {
     try {

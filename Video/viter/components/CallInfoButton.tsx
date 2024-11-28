@@ -1,6 +1,7 @@
 import IconButton, { IconButtonProps } from './IconButton';
 import clsx from 'clsx';
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface CallInfoButtonProps extends Omit<IconButtonProps, 'variant'> {}
 
 const CallInfoButton = ({

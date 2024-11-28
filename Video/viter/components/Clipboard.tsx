@@ -1,6 +1,8 @@
-import React, { useRef } from 'react';
+import React, { useRef } from "react";
 
-import ContentCopy from './icons/ContentCopy';
+import ContentCopy from "./icons/ContentCopy";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
 
 interface ClipboardProps {
   value: string;
@@ -18,19 +20,19 @@ const Clipboard = ({ value }: ClipboardProps) => {
 
   return (
     <div className="relative">
-      <input
+      <Input
         type="text"
         ref={inputRef}
         onChange={(e) => e.preventDefault()}
         value={value}
-        className="h-10 w-full rounded bg-light-gray border border-light-gray py-3 pl-3 pr-10 font-roboto text-meet-black text-sm outline-none duration-200"
       />
-      <button
+      <Button
+        variant={"ghost"}
         onClick={copyToClipboard}
-        className="absolute right-0 top-0 flex h-10 w-10 rounded-full items-center justify-center duration-200 hover:bg-hairline-gray"
+        className="absolute right-0 top-0 items-center justify-center duration-200"
       >
         <ContentCopy />
-      </button>
+      </Button>
     </div>
   );
 };

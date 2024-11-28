@@ -47,17 +47,18 @@ Deno.serve(async (req) => {
 
     switch (method) {
       case "POST": {
-        const { name } = await req.json();
-        if (!name) {
-          return new Response("Name missing", { status: STATUS.BAD_REQUEST });
+        const { message } = await req.json();
+        if (!message) {
+          return new Response("Missing data", { status: STATUS.BAD_REQUEST });
         }
         const { data, error } = await supabase
           .schema("pgmq")
           .from("q_code_execution")
-          .insert([{ name }])
-          .select("id");
+          .insert({ message })
+          .select("msg_id");
 
-        if (error || !data) {
+        if (error) {
+          console.error(error);
           return new Response(error.message, {
             status: STATUS.INTERNAL_SERVER_ERROR,
           });

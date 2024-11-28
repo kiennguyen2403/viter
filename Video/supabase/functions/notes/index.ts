@@ -32,15 +32,16 @@ Deno.serve(async (req) => {
     if (!payload) {
       return new Response("Unauthorized", { status: STATUS.UNAUTHORIZED });
     }
-    const meetingId = req.url.split("/").pop();
 
-    if (!meetingId) {
-      return new Response("Meeting ID is required", {
-        status: STATUS.BAD_REQUEST,
-      });
-    }
     switch (method) {
       case "GET": {
+        const meetingId = req.url.split("/").pop();
+
+        if (!meetingId) {
+          return new Response("Meeting ID is required", {
+            status: STATUS.BAD_REQUEST,
+          });
+        }
         const { data, error } = await supabase
           .from("notes")
           .select("*")

@@ -305,6 +305,16 @@ body {
     }
   }
 
+  .root-theme .str-chat__message.str-chat__message--me .str-chat__message-bubble {
+    background-color: var(--meet-black);
+    color: white;
+  }
+
+  .root-theme .str-chat__avatar .str-chat__avatar-fallback {
+    background-color: var(--meet-black);
+    color: white;
+  }
+
   .google-symbols {
     font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
     color: white;

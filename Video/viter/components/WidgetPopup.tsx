@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import Popup from './Popup';
-import EditNote from './icons/EditNote';
-import Robot from './icons/Robot';
-import Code from './icons/Code';
+
+import Popup from "./Popup";
+import EditNote from "./icons/EditNote";
+import Robot from "./icons/Robot";
+import Code from "./icons/Code";
 import WhiteboardPopup from "./WhiteBoardPopup";
+import { Card, CardDescription, CardTitle } from "./ui/card";
+import CodePopup from "./CodePopup";
 
 interface WidgetPopupProps {
   isOpen: boolean;
@@ -13,9 +15,11 @@ interface WidgetPopupProps {
 }
 
 const WidgetPopup = ({ isOpen, onClose, onOpenChange }: WidgetPopupProps) => {
-  const router = useRouter();
   const [isWhiteboardOpen, setIsWhiteboardOpen] = useState(false); // State for WhiteboardPopup
+  const [isChatbotOpen, setIsChatbotOpen] = useState(false); // State for ChatbotPopup
+  const [isCodeOpen, setIsCodeOpen] = useState(false); // State for CodePopup
 
+  useEffect(() => {}, []);
   useEffect(() => {
     if (onOpenChange) {
       onOpenChange(isOpen);
@@ -24,38 +28,38 @@ const WidgetPopup = ({ isOpen, onClose, onOpenChange }: WidgetPopupProps) => {
 
   const handleItemClick = (action: string) => {
     switch (action) {
-      case 'Whiteboard':
+      case "Whiteboard":
         setIsWhiteboardOpen(true); // Open WhiteboardPopup
         break;
-      case 'Chatbot':
-        router.push('/chatbot');
+      case "Chatbot":
+        setIsChatbotOpen(true); // Open ChatbotPopup
         break;
-      case 'Coding':
-        router.push('/coding');
+      case "Code":
+        setIsCodeOpen(true); // Open CodePopup
         break;
       default:
-        console.log('No action defined.');
+        console.log("No action defined.");
     }
   };
 
   const items = [
     {
       icon: <EditNote />,
-      title: 'Whiteboard',
-      description: 'Note everything down',
-      action: 'Whiteboard',
+      title: "Whiteboard",
+      description: "Note everything down",
+      action: "Whiteboard",
     },
     {
       icon: <Robot />,
-      title: 'Chatbot',
-      description: 'Ask chatbot questions',
-      action: 'Chatbot',
+      title: "Chatbot",
+      description: "Ask chatbot questions",
+      action: "Chatbot",
     },
     {
       icon: <Code />,
-      title: 'Code',
-      description: 'Code makes you smart',
-      action: 'Code',
+      title: "Code",
+      description: "Code editor",
+      action: "Code",
     },
   ];
 
@@ -70,17 +74,18 @@ const WidgetPopup = ({ isOpen, onClose, onOpenChange }: WidgetPopupProps) => {
         <div className="px-4 pb-3 pt-0 h-[calc(100%-66px)]">
           <ul className="space-y-3">
             {items.map((item, index) => (
-              <button
-                key={index}
-                onClick={() => handleItemClick(item.action)}
-                className="flex items-center space-x-4 bg-white hover:bg-gray-100 p-3 rounded-lg shadow-md w-full text-left transition-all focus:outline-none focus:ring-2 focus:ring-gray-300"
-              >
-                <div className="text-3xl">{item.icon}</div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800">{item.title}</h3>
-                  <p className="text-sm text-gray-500">{item.description}</p>
-                </div>
-              </button>
+              <li key={index}>
+                <Card
+                  onClick={() => handleItemClick(item.action)}
+                  className="flex items-center space-x-4 bg-white p-3 rounded-lg shadow-md w-full text-left transition-all duration-300 ease-in-out transform hover:scale-103 bg-white shadow-lg rounded-xl p-4 text-gray-700 shadow-blue-gray-900/5 hover:shadow-xl cursor-pointer"
+                >
+                  <div className="text-3xl">{item.icon}</div>
+                  <div>
+                    <CardTitle>{item.title}</CardTitle>
+                    <CardDescription>{item.description}</CardDescription>
+                  </div>
+                </Card>
+              </li>
             ))}
           </ul>
         </div>
@@ -93,6 +98,17 @@ const WidgetPopup = ({ isOpen, onClose, onOpenChange }: WidgetPopupProps) => {
           onClose={() => setIsWhiteboardOpen(false)} // Close WhiteboardPopup
           onOpenChange={(state) => setIsWhiteboardOpen(state)} // Optionally notify parent about state changes
         />
+      )}
+      {/* {
+        isChatbotOpen && (
+          <ChatbotPopup
+            isOpen={isChatbotOpen}
+            onClose={() => setIsChatbotOpen(false)}
+          />
+        )
+      } */}
+      {isCodeOpen && (
+        <CodePopup isOpen={isCodeOpen} onClose={() => setIsCodeOpen(false)} />
       )}
     </>
   );

@@ -6,12 +6,13 @@ import {
   Window,
   ChannelHeader,
   Thread,
-} from 'stream-chat-react';
-import 'stream-chat-react/css/v2/index.css';
-import 'stream-chat-react/css/v2/emoji-replacement.css';
-import { type Channel as ChannelType } from 'stream-chat';
+} from "stream-chat-react";
+import "stream-chat-react/css/v2/index.css";
+import "stream-chat-react/css/v2/emoji-replacement.css";
+import { type Channel as ChannelType } from "stream-chat";
 import { useEffect } from "react";
-import Popup from './Popup';
+import Popup from "./Popup";
+import CustomMessageInput from "./CustomMessageInput";
 
 interface ChatPopupProps {
   isOpen: boolean;
@@ -20,8 +21,12 @@ interface ChatPopupProps {
   channel: ChannelType<DefaultStreamChatGenerics>;
 }
 
-const ChatPopup = ({ channel, onOpenChange, onClose, isOpen }: ChatPopupProps) => {
-
+const ChatPopup = ({
+  channel,
+  onOpenChange,
+  onClose,
+  isOpen,
+}: ChatPopupProps) => {
   useEffect(() => {
     if (onOpenChange) {
       onOpenChange(isOpen); // Notify parent when the open state changes
@@ -38,9 +43,9 @@ const ChatPopup = ({ channel, onOpenChange, onClose, isOpen }: ChatPopupProps) =
       <div className="px-0 pb-3 pt-0 h-[calc(100%-66px)]">
         <Channel channel={channel}>
           <Window>
-            <ChannelHeader live={true} title={'General'} />
+            <ChannelHeader live={true} title={"General"} />
             <MessageList disableDateSeparator />
-            <MessageInput noFiles />
+            <MessageInput noFiles Input={CustomMessageInput} />
           </Window>
           <Thread />
         </Channel>

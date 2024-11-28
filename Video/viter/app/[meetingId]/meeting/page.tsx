@@ -1,4 +1,4 @@
-'use client';
+"use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -16,14 +16,11 @@ import CallControlButton from "@/components/CallControlButton";
 import CallInfoButton from "@/components/CallInfoButton";
 import CallEndFilled from "@/components/icons/CallEndFilled";
 import Chat from "@/components/icons/Chat";
-import ChatFilled from "@/components/icons/ChatFilled";
 import ChatPopup from "@/components/ChatPopup";
-import GroupPopup from "@/components/GroupPopup";
 import InfoPopup from "@/components/InfoPopup";
 import WidgetPopup from "@/components/WidgetPopup";
 import GridLayout from "@/components/GridLayout";
 import SpeakerLayout from "@/components/SpeakerLayout";
-import Group from "@/components/icons/Group";
 import Info from "@/components/icons/Info";
 import PresentToAll from "@/components/icons/PresentToAll";
 import MeetingPopup from "@/components/MeetingPopup";
@@ -61,11 +58,12 @@ const Meeting = ({ params }: MeetingProps) => {
 
   // Use a single state variable for open popups
   const [openPopup, setOpenPopup] = useState<
-    null | 'chat' | 'info' | 'group' | 'widget'
+    null | "chat" | "info" | "group" | "widget"
   >(null);
 
   // Participant in Spotlight
-  const participantInSpotlight = participants.length > 0 ? participants[0] : null;
+  const participantInSpotlight =
+    participants.length > 0 ? participants[0] : null;
 
   // Effect for participant changes
   useEffect(() => {
@@ -114,7 +112,7 @@ const Meeting = ({ params }: MeetingProps) => {
   };
 
   // Toggle function for popups
-  const togglePopup = (popupName: 'chat' | 'info' | 'group' | 'widget') => {
+  const togglePopup = (popupName: "chat" | "info" | "group" | "widget") => {
     setOpenPopup((current) => (current === popupName ? null : popupName));
   };
 
@@ -124,7 +122,7 @@ const Meeting = ({ params }: MeetingProps) => {
     <StreamTheme className="root-theme">
       <div
         className={`relative w-full h-svh bg-meet-black overflow-hidden ${
-          openPopup ? 'layout-adjusted' : ''
+          openPopup ? "layout-adjusted" : ""
         }`}
       >
         {isSpeakerLayout && <SpeakerLayout />}
@@ -157,56 +155,35 @@ const Meeting = ({ params }: MeetingProps) => {
           {/* Meeting Info */}
           <div className="hidden sm:flex grow shrink basis-1/4 items-center justify-end mr-3">
             <CallInfoButton
-              onClick={() => togglePopup('info')}
+              onClick={() => togglePopup("info")}
               icon={<Info />}
               title="Meeting details"
             />
             <CallInfoButton
-              onClick={() => togglePopup('group')}
-              icon={<Group />}
-              title="People"
-            />
-            <CallInfoButton
-              onClick={() => togglePopup('chat')}
-              icon={
-                openPopup === 'chat' ? (
-                  <ChatFilled/>
-                ) : (<Chat />)
-              }
+              onClick={() => togglePopup("chat")}
+              icon={<Chat />}
               title="Chat with everyone"
             />
             <CallInfoButton
-              onClick={() => togglePopup('widget')}
+              onClick={() => togglePopup("widget")}
               icon={<Widget />}
               title="Tools and widgets"
             />
           </div>
         </div>
         {/* Popups */}
-        {openPopup === 'info' && (
-          <InfoPopup
-            isOpen={true}
-            onClose={() => setOpenPopup(null)}
-          />
+        {openPopup === "info" && (
+          <InfoPopup isOpen={true} onClose={() => setOpenPopup(null)} />
         )}
-        {openPopup === 'group' && (
-          <GroupPopup
-            isOpen={true}
-            onClose={() => setOpenPopup(null)}
-          />
-        )}
-        {openPopup === 'chat' && chatChannel && (
+        {openPopup === "chat" && chatChannel && (
           <ChatPopup
             channel={chatChannel}
             isOpen={true}
             onClose={() => setOpenPopup(null)}
           />
         )}
-        {openPopup === 'widget' && (
-          <WidgetPopup
-            isOpen={true}
-            onClose={() => setOpenPopup(null)}
-          />
+        {openPopup === "widget" && (
+          <WidgetPopup isOpen={true} onClose={() => setOpenPopup(null)} />
         )}
         {isCreator && <MeetingPopup />}
         <audio
