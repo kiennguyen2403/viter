@@ -139,11 +139,14 @@ const Page = () => {
   const updateParticipantStatus = async (meetingId: string) => {
     try {
       await axios.put(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/participants/${meetingId}`,
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/participants`,
         {
           status: "STAND_BY",
         },
         {
+          params: {
+            nano_id: meetingId,
+          },
           headers: {
             Authorization: `Bearer ${user?.accessToken || ""}`,
           },

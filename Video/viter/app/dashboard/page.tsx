@@ -148,11 +148,14 @@ const Page = () => {
   const updateParticipantStatus = async (meetingId: string) => {
     try {
       await axios.put(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/participants/${meetingId}`,
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/participants`,
         {
           status: "STAND_BY",
         },
         {
+          params: {
+            nano_id: meetingId,
+          },
           headers: {
             Authorization: `Bearer ${user?.accessToken || ""}`,
           },
@@ -255,32 +258,14 @@ const Page = () => {
         if (!user?.accessToken) return;
         setIsMeetingLoading(true);
 
-        const participantsResponse = await axios.get(
-          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/participants/`,
+        const meetingResponses = await axios.get(
+          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/meetings`,
           {
-            headers: { Authorization: `Bearer ${user?.accessToken}` },
+            headers: { Authorization: `Bearer ${user?.accessToken || ""}` },
           }
         );
+        const meetingsData = meetingResponses.data;
 
-        const participantMeetings = [
-          ...new Set(
-            participantsResponse.data
-              .map((participant: { meetingId: any }) => participant.meetingId)
-              .filter(Boolean)
-          ),
-        ];
-
-        const meetingPromises = participantMeetings.map((meetingId: any) =>
-          axios.get(
-            `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/meetings/${meetingId}`,
-            {
-              headers: { Authorization: `Bearer ${user?.accessToken || ""}` },
-            }
-          )
-        );
-
-        const meetingResponses = await Promise.all(meetingPromises);
-        const meetingsData = meetingResponses.map((response) => response.data);
         setMeetings(
           meetingsData.filter((meeting: any) => meeting.status !== "END")
         );

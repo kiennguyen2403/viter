@@ -78,12 +78,15 @@ const Lobby = () => {
         await axios.put(
           `${
             process.env.NEXT_PUBLIC_SUPABASE_URL
-          }/functions/v1/meetings/${meetingId}`,
+          }/functions/v1/meetings`,
           {
             nanoid: meetingId,
             status: "LIVE",
           },
           {
+            params: {
+              nano_id: meetingId,
+            },
             headers: {
               Authorization: `Bearer ${user?.accessToken || ""}`,
             },
@@ -98,11 +101,14 @@ const Lobby = () => {
     const updateParticipantStatus = async () => {
       try {
         await axios.put(
-          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/participants/${meetingId}`,
+          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/participants`,
           {
             status: "STAND_BY",
           },
           {
+            params: {
+              nano_id: meetingId,
+            },
             headers: {
               Authorization: `Bearer ${user?.accessToken || ""}`,
             },

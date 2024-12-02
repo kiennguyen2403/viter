@@ -7,6 +7,7 @@ import Code from "./icons/Code";
 import WhiteboardPopup from "./WhiteBoardPopup";
 import { Card, CardDescription, CardTitle } from "./ui/card";
 import CodePopup from "./CodePopup";
+import ProblemSuggestionPopup from "./ProblemSuggestionPopup";
 
 interface WidgetPopupProps {
   isOpen: boolean;
@@ -16,10 +17,9 @@ interface WidgetPopupProps {
 
 const WidgetPopup = ({ isOpen, onClose, onOpenChange }: WidgetPopupProps) => {
   const [isWhiteboardOpen, setIsWhiteboardOpen] = useState(false); // State for WhiteboardPopup
-  const [isChatbotOpen, setIsChatbotOpen] = useState(false); // State for ChatbotPopup
+  const [isChatbotOpen, setIsProblemOpenOpen] = useState(false); // State for ChatbotPopup
   const [isCodeOpen, setIsCodeOpen] = useState(false); // State for CodePopup
 
-  useEffect(() => {}, []);
   useEffect(() => {
     if (onOpenChange) {
       onOpenChange(isOpen);
@@ -31,14 +31,14 @@ const WidgetPopup = ({ isOpen, onClose, onOpenChange }: WidgetPopupProps) => {
       case "Whiteboard":
         setIsWhiteboardOpen(true); // Open WhiteboardPopup
         break;
-      case "Chatbot":
-        setIsChatbotOpen(true); // Open ChatbotPopup
+      case "Problems Pool":
+        setIsProblemOpenOpen(true); // Open ChatbotPopup
         break;
       case "Code":
         setIsCodeOpen(true); // Open CodePopup
         break;
       default:
-        console.log("No action defined.");
+        console.error("No action defined.");
     }
   };
 
@@ -51,9 +51,9 @@ const WidgetPopup = ({ isOpen, onClose, onOpenChange }: WidgetPopupProps) => {
     },
     {
       icon: <Robot />,
-      title: "Chatbot",
-      description: "Ask chatbot questions",
-      action: "Chatbot",
+      title: "Problems Pool",
+      description: "Access our diverse problems pool",
+      action: "Problems Pool",
     },
     {
       icon: <Code />,
@@ -99,14 +99,12 @@ const WidgetPopup = ({ isOpen, onClose, onOpenChange }: WidgetPopupProps) => {
           onOpenChange={(state) => setIsWhiteboardOpen(state)} // Optionally notify parent about state changes
         />
       )}
-      {/* {
-        isChatbotOpen && (
-          <ChatbotPopup
-            isOpen={isChatbotOpen}
-            onClose={() => setIsChatbotOpen(false)}
-          />
-        )
-      } */}
+      {isChatbotOpen && (
+        <ProblemSuggestionPopup
+          isOpen={isChatbotOpen}
+          onClose={() => setIsProblemOpenOpen(false)}
+        />
+      )}
       {isCodeOpen && (
         <CodePopup isOpen={isCodeOpen} onClose={() => setIsCodeOpen(false)} />
       )}
