@@ -1,0 +1,5 @@
+{
+    "imports": {
+        "pdf-parse": "npm:pdf-parse/lib/pdf-parse.js"
+    }
+}

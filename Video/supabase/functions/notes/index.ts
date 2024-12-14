@@ -21,6 +21,7 @@ Deno.serve(async (req) => {
     if (!authHeader) {
       return new Response("Authorization header missing", {
         status: STATUS.UNAUTHORIZED,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
     const token = authHeader.replace("Bearer ", "");
@@ -30,7 +31,10 @@ Deno.serve(async (req) => {
     const payload = await verifyToken(token);
 
     if (!payload) {
-      return new Response("Unauthorized", { status: STATUS.UNAUTHORIZED });
+      return new Response("Unauthorized", {
+        status: STATUS.UNAUTHORIZED,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     switch (method) {
@@ -40,6 +44,7 @@ Deno.serve(async (req) => {
         if (!meetingId) {
           return new Response("Meeting ID is required", {
             status: STATUS.BAD_REQUEST,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
         const { data, error } = await supabase
@@ -49,9 +54,13 @@ Deno.serve(async (req) => {
         if (error) {
           return new Response(error.message, {
             status: STATUS.INTERNAL_SERVER_ERROR,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
-        return new Response(JSON.stringify(data), { status: STATUS.OK });
+        return new Response(JSON.stringify(data), {
+          status: STATUS.OK,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
       case "POST": {
         const body = await req.json();
@@ -64,13 +73,18 @@ Deno.serve(async (req) => {
         if (error) {
           return new Response(error.message, {
             status: STATUS.INTERNAL_SERVER_ERROR,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
-        return new Response(JSON.stringify(data), { status: STATUS.CREATED });
+        return new Response(JSON.stringify(data), {
+          status: STATUS.CREATED,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
       default: {
         return new Response("Method not allowed", {
           status: STATUS.METHOD_NOT_ALLOWED,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
     }
@@ -78,10 +92,12 @@ Deno.serve(async (req) => {
     if (error instanceof Error) {
       return new Response(error.message, {
         status: STATUS.INTERNAL_SERVER_ERROR,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     } else {
       return new Response("An unknown error occurred", {
         status: STATUS.INTERNAL_SERVER_ERROR,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
   }

@@ -16,8 +16,9 @@ Deno.serve(async (req) => {
     if (method === "OPTIONS") {
       return new Response("ok", { headers: corsHeaders });
     }
-    console.log("req", req);
+
     const authHeader = req.headers.get("Authorization");
+
     if (!authHeader) {
       return new Response("Authorization header missing", {
         status: STATUS.UNAUTHORIZED,
@@ -25,7 +26,7 @@ Deno.serve(async (req) => {
       });
     }
     const token = authHeader.replace("Bearer ", "");
-    const supabase = Supabase.getInstance(token);
+
     const payload = await verifyToken(token);
 
     if (!payload) {
@@ -35,6 +36,7 @@ Deno.serve(async (req) => {
       });
     }
 
+    const supabase = Supabase.getInstance(token);
     const { data: userData, error: userError } = await supabase
       .from("users")
       .select("*")
@@ -42,14 +44,18 @@ Deno.serve(async (req) => {
         "token_identifier",
         payload.sub,
       ).single();
-  
+
     if (userError) {
       return new Response(userError.message, {
         status: STATUS.UNAUTHORIZED,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
     const id = req.url.split("/").pop();
+    const params = new URL(req.url).searchParams;
+    const nano_id = params.get("nano_id");
+
     switch (method) {
       case "GET": {
         if (id) {
@@ -69,7 +75,8 @@ Deno.serve(async (req) => {
             status: STATUS.OK,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
-        } else {
+        }
+        else {
           const { data, error } = await supabase
             .from("participants")
             .select("*")
@@ -94,8 +101,10 @@ Deno.serve(async (req) => {
           {
             ...body,
             user_id: userData.id,
+            meeting_id: body.meeting_id,
           },
-        ]);
+        ]).select("*");
+
         if (error) {
           return new Response(error.message, {
             status: STATUS.INTERNAL_SERVER_ERROR,
@@ -108,30 +117,48 @@ Deno.serve(async (req) => {
         });
       }
       case "PUT": {
-        if (!id) {
+        if (!id || !nano_id) {
           return new Response("Missing meeting ID", {
             status: STATUS.BAD_REQUEST,
           });
         }
-        const { data: meetingData, error: meetingError } = await supabase
-          .from("meetings")
-          .select("*")
-          .eq("nano_id", id)
-          .single();
-        if (meetingError) {
-          return new Response(meetingError.message, {
-            status: STATUS.INTERNAL_SERVER_ERROR,
+        if (nano_id) {
+          const { data: meetingData, error: meetingError } = await supabase
+            .from("meetings")
+            .select("*")
+            .eq("nano_id", nano_id)
+            .single();
+
+          if (meetingError) {
+            return new Response(meetingError.message, {
+              status: STATUS.INTERNAL_SERVER_ERROR,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+          const body = await req.json();
+          const { data, error } = await supabase.from("participants")
+            .upsert({
+              ...body,
+              user_id: userData.id,
+              meeting_id: meetingData.id,
+            })
+            .eq("meeting_id", meetingData.id)
+            .eq("user_id", userData.id);
+          if (error) {
+            return new Response(error.message, {
+              status: STATUS.INTERNAL_SERVER_ERROR,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+          return new Response(JSON.stringify(data), {
+            status: STATUS.OK,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
         const body = await req.json();
         const { data, error } = await supabase.from("participants")
-          .upsert({
-            ...body,
-            user_id: userData.id,
-            meeting_id: meetingData.id,
-          })
-          .eq("meeting_id", meetingData.id)
+          .update(body)
+          .eq("meeting_id", id)
           .eq("user_id", userData.id);
         if (error) {
           return new Response(error.message, {

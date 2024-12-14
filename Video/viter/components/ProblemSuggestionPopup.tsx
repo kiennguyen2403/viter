@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableRow } from "./ui/table";
 import axios from "axios";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import { Button } from "./ui/button";
+import Spinner from "./Spinner";
 
 interface Problem {
   id: number;
@@ -22,69 +23,64 @@ interface ProblemSuggestionPopupProps {
   onOpenChange?: (isOpen: boolean) => void;
 }
 
-const ProblemSuggestionPopup = ({
+const ProblemSuggestionPopup: React.FC<ProblemSuggestionPopupProps> = ({
   isOpen,
   onClose,
   onOpenChange,
-}: ProblemSuggestionPopupProps) => {
+}) => {
   const [problems, setProblems] = useState<Problem[]>([]);
   const [input, setInput] = useState<string>("");
+  const [isFetching, setIsFetching] = useState<boolean>(false);
   const { user, isLoading } = useUser();
 
-  const fetchProblems = async () => {
+  const fetchProblems = async (query: string = "") => {
+    setIsFetching(true);
     try {
-      let response;
-
-      if (input === "") {
-        response = await axios.get(
-          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/problems/`,
-          {
-            headers: { Authorization: `Bearer ${user?.accessToken || ""}` },
-          }
-        );
-      } else {
-        response = await axios.get(
-          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/problems`,
-          {
-            params: {
-              query: input,
-            },
-            headers: { Authorization: `Bearer ${user?.accessToken || ""}` },
-          }
-        );
-      }
-      console.log(response.data);
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/problems/`,
+        {
+          params: query ? { query } : undefined,
+          headers: { Authorization: `Bearer ${user?.accessToken || ""}` },
+        }
+      );
       setProblems(response.data);
     } catch (error) {
-      console.error(error);
+      console.error("Error fetching problems:", error);
+    } finally {
+      setIsFetching(false);
     }
   };
 
-  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const formData = new FormData();
-      formData.append("file", file);
-      axios
-        .post(
-          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/problems`,
-          formData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-              Authorization: `Bearer ${user?.accessToken || ""}`,
-            },
-          }
-        )
-        .then((response) => {
-          setProblems(response.data);
-        })
-        .catch((error) => {
-          console.error(error);
-        });
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("files", file);
+
+    setIsFetching(true);
+    try {
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/problems-vector`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${user?.accessToken || ""}`,
+          },
+        }
+      );
+      setProblems([...response.data]);
+    } catch (error) {
+      console.error("Error uploading file:", error);
+    } finally {
+      setIsFetching(false);
     }
   };
-  const handleItemClick = (action: string) => {};
+
+  const handleSearch = () => {
+    fetchProblems(input);
+  };
 
   useEffect(() => {
     if (onOpenChange) {
@@ -96,9 +92,34 @@ const ProblemSuggestionPopup = ({
     }
   }, [isOpen, onOpenChange]);
 
-  const onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInput(e.target.value);
-  };
+  const renderTable = (data: Problem[]) => (
+    <Table className="w-full">
+      <TableRow>
+        <TableHead>Title</TableHead>
+        <TableHead>Description</TableHead>
+        <TableHead>Difficulty</TableHead>
+        <TableHead>Type</TableHead>
+      </TableRow>
+      <TableBody>
+        {data.length > 0 ? (
+          data.map((problem) => (
+            <TableRow key={problem.id}>
+              <TableCell>{problem.title}</TableCell>
+              <TableCell>{problem.question}</TableCell>
+              <TableCell>{problem.difficulty}</TableCell>
+              <TableCell>{problem.type}</TableCell>
+            </TableRow>
+          ))
+        ) : (
+          <TableRow>
+            <TableCell colSpan={4} className="text-center">
+              No problems found.
+            </TableCell>
+          </TableRow>
+        )}
+      </TableBody>
+    </Table>
+  );
 
   return (
     <Popup
@@ -112,70 +133,37 @@ const ProblemSuggestionPopup = ({
           <Tabs defaultValue="all" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="all">Search</TabsTrigger>
-              <TabsTrigger value="recommend">AI recommend</TabsTrigger>
+              <TabsTrigger value="recommend">AI Recommend</TabsTrigger>
             </TabsList>
             <TabsContent value="all">
               <div className="flex flex-col w-full h-[700px] gap-2">
-                <div className="pt-4 pb-4 flex gap-10">
+                <div className="pt-4 pb-4 flex gap-4">
                   <Input
                     value={input}
-                    onChange={onInputChange}
+                    onChange={(e) => setInput(e.target.value)}
                     placeholder="Search..."
                   />
-
-                  <Button onClick={fetchProblems}>Search</Button>
+                  <Button onClick={handleSearch} disabled={isFetching}>
+                    Search
+                  </Button>
                 </div>
-                <Table className="w-full">
-                  <TableRow>
-                    <TableHead>Title</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Difficulty</TableHead>
-                    <TableHead>Type</TableHead>
-                  </TableRow>
-                  <TableBody>
-                    {problems.map((problem, index) => (
-                      <TableRow key={index}>
-                        <TableCell>{problem.title}</TableCell>
-                        <TableCell>{problem.question}</TableCell>
-                        <TableCell>{problem.difficulty}</TableCell>
-                        <TableCell>{problem.type}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                {isFetching ? <Spinner /> : renderTable(problems)}
               </div>
             </TabsContent>
             <TabsContent value="recommend">
-              <div className="flex flex-col w-full gap-2">
+              <div className="flex flex-col w-full h-[700px] gap-2">
                 <div className="pt-4">
                   <Input
                     id="file"
                     type="file"
                     className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onChange={handleFileChange}
                   />
                   <p className="mt-4 text-xs text-gray-500">
-                    Upload your resume and job description in PDF or DOCX
-                    format.
+                    Upload your resume and job description in PDF or TXT format.
                   </p>
                 </div>
-                <Table>
-                  <TableRow>
-                    <TableHead>Title</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Difficulty</TableHead>
-                    <TableHead>Type</TableHead>
-                  </TableRow>
-                  <TableBody>
-                    {problems.map((problem, index) => (
-                      <TableRow key={index}>
-                        <TableCell>{problem.title}</TableCell>
-                        <TableCell>{problem.question}</TableCell>
-                        <TableCell>{problem.difficulty}</TableCell>
-                        <TableCell>{problem.type}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                {isFetching || isLoading ? <Spinner /> : renderTable(problems)}
               </div>
             </TabsContent>
           </Tabs>

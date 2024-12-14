@@ -16,6 +16,7 @@ Deno.serve(async (req) => {
     if (!authHeader) {
       return new Response("Authorization header missing", {
         status: STATUS.UNAUTHORIZED,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -23,7 +24,10 @@ Deno.serve(async (req) => {
     const payload = await verifyToken(token);
 
     if (!payload) {
-      return new Response("Unauthorized", { status: STATUS.UNAUTHORIZED });
+      return new Response("Unauthorized", {
+        status: STATUS.UNAUTHORIZED,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const { data: userData, error: userError } = await Supabase.getInstance(
@@ -37,6 +41,7 @@ Deno.serve(async (req) => {
     if (userError) {
       return new Response(`Error fetching user: ${userError.message}`, {
         status: STATUS.INTERNAL_SERVER_ERROR,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -58,15 +63,14 @@ Deno.serve(async (req) => {
           if (error) {
             return new Response(`Error fetching meeting: ${error.message}`, {
               status: STATUS.INTERNAL_SERVER_ERROR,
-            });
-          }
-          if (!data) {
-            return new Response("Meeting not found", {
-              status: STATUS.NOT_FOUND,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
             });
           }
 
-          return new Response(JSON.stringify(data), { status: STATUS.OK });
+          return new Response(JSON.stringify(data), {
+            status: STATUS.OK,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
         }
         if (id) {
           const { data, error } = await supabase
@@ -79,15 +83,14 @@ Deno.serve(async (req) => {
           if (error) {
             return new Response(`Error fetching meeting: ${error.message}`, {
               status: STATUS.INTERNAL_SERVER_ERROR,
-            });
-          }
-          if (!data) {
-            return new Response("Meeting not found", {
-              status: STATUS.NOT_FOUND,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
             });
           }
 
-          return new Response(JSON.stringify(data), { status: STATUS.OK });
+          return new Response(JSON.stringify(data), {
+            status: STATUS.OK,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
         }
 
         const { data, error } = await supabase
@@ -98,10 +101,14 @@ Deno.serve(async (req) => {
         if (error) {
           return new Response(`Error fetching meetings: ${error.message}`, {
             status: STATUS.INTERNAL_SERVER_ERROR,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
 
-        return new Response(JSON.stringify(data), { status: STATUS.OK });
+        return new Response(JSON.stringify(data), {
+          status: STATUS.OK,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
       case "POST": {
         const body = await req.json();
@@ -113,15 +120,22 @@ Deno.serve(async (req) => {
         if (error) {
           return new Response(
             `Error creating meeting: ${error.message}`,
-            { status: STATUS.INTERNAL_SERVER_ERROR },
+            {
+              status: STATUS.INTERNAL_SERVER_ERROR,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            },
           );
         }
-        return new Response(JSON.stringify(data), { status: STATUS.OK });
+        return new Response(JSON.stringify(data), {
+          status: STATUS.OK,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
       case "PUT": {
         if (!id) {
           return new Response("Meeting ID required", {
             status: STATUS.BAD_REQUEST,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
 
@@ -134,15 +148,20 @@ Deno.serve(async (req) => {
         if (error) {
           return new Response(`Error updating meeting: ${error.message}`, {
             status: STATUS.INTERNAL_SERVER_ERROR,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
 
-        return new Response("Meeting updated", { status: STATUS.OK });
+        return new Response("Meeting updated", {
+          status: STATUS.OK,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
       case "DELETE": {
         if (!id) {
           return new Response("Meeting ID required", {
             status: STATUS.BAD_REQUEST,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
 
@@ -154,24 +173,32 @@ Deno.serve(async (req) => {
         if (error) {
           return new Response(`Error deleting meeting: ${error.message}`, {
             status: STATUS.INTERNAL_SERVER_ERROR,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
 
-        return new Response("Meeting deleted", { status: STATUS.OK });
+        return new Response("Meeting deleted", {
+          status: STATUS.OK,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
       }
       default:
         return new Response("Method not allowed", {
           status: STATUS.METHOD_NOT_ALLOWED,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
     }
   } catch (error) {
+    console.error(error);
     if (error instanceof Error) {
       return new Response(error.message, {
         status: STATUS.INTERNAL_SERVER_ERROR,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     } else {
       return new Response("An unknown error occurred", {
         status: STATUS.INTERNAL_SERVER_ERROR,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
   }

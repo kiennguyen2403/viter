@@ -1,4 +1,9 @@
 import { decodeToken } from "@/utils/auth";
+import { SupabaseVectorStore } from "@langchain/community/vectorstores/supabase";
+import { OpenAIEmbeddings } from "@langchain/openai";
+import { getSupabase } from "@/utils/supabase/client";
+import { CharacterTextSplitter } from "langchain/text_splitter";
+import pdf from 'pdf-parse';
 
 export async function POST(req: Request): Promise<Response> {
     try {
@@ -11,25 +16,21 @@ export async function POST(req: Request): Promise<Response> {
         const bearerToken = authHeader.replace("Bearer ", "");
         const payload = decodeToken(bearerToken);
         if (!payload) return new Response("Unauthorized", { status: 401 });
-        const { inviteCode } = await req.json();
-        if (!inviteCode) {
-            return new Response("inviteCode is required", { status: 400 });
+        const supabase = getSupabase(bearerToken);
+
+        const formData = await req.formData();
+        const file = formData.get("file") as File;
+        if (!file) {
+            return new Response("File not found in form data", { status: 400 });
         }
 
-        const decodedInvite = decodeToken(inviteCode);
-        if (!decodedInvite || !decodedInvite.participant) {
-            return new Response("participant is required", { status: 400 });
-        }
-        if (decodedInvite.participant !== payload.email) {
-            return new Response("Invalid", { status: 401 });
-        }
-        return new Response(
-            JSON.stringify({
-                participant: decodedInvite.participant,
-                meetingId: decodedInvite.meetingId,
-            }),
-            { status: 200, headers: { "Content-Type": "application/json" } },
-        );
+        const arrayBuffer = await file.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        const { text } = await pdf(buffer);
+
+        return new Response(text, { status: 200 });
+
+
     } catch (error) {
         if (error instanceof Error) {
             return new Response(error.message, { status: 500 });

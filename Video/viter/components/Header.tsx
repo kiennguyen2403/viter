@@ -85,8 +85,11 @@ const Header = ({ navItems = true, isSidebarOpen = false }: HeaderProps) => {
         };
 
         // Subscribe to participant and meeting changes
-        const participantsSubscription = supabase
-          .channel("realtime:user_participants")
+        const participantsChannel = supabase.channel(
+          "realtime:user_participants"
+        );
+
+        participantsChannel
           .on(
             "postgres_changes",
             {
@@ -99,8 +102,9 @@ const Header = ({ navItems = true, isSidebarOpen = false }: HeaderProps) => {
           )
           .subscribe();
 
-        const meetingsSubscription = supabase
-          .channel("realtime:user_meetings")
+        const meetingsChannel = supabase.channel("realtime:user_meetings");
+
+        meetingsChannel
           .on(
             "postgres_changes",
             {
@@ -115,8 +119,8 @@ const Header = ({ navItems = true, isSidebarOpen = false }: HeaderProps) => {
 
         // Cleanup subscriptions
         return () => {
-          supabase.removeChannel(participantsSubscription);
-          supabase.removeChannel(meetingsSubscription);
+          supabase.removeChannel(participantsChannel);
+          supabase.removeChannel(meetingsChannel);
         };
       } catch (error) {
         console.error("Error initializing notifications:", error);

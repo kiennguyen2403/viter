@@ -14,6 +14,8 @@ import axios from "axios";
 import { Separator } from "./ui/separator";
 import { Badge } from "./ui/badge";
 import { useUser } from "@auth0/nextjs-auth0/client";
+import { getSupabase } from "@/utils/supabase/client";
+import { RealtimeChannel } from "@supabase/supabase-js";
 
 interface Testcase {
   title: string;
@@ -38,24 +40,25 @@ interface ExecuteResponse {
 }
 
 const CodePopup = ({ isOpen, onClose, onOpenChange }: CodePopupProps) => {
-  const [language, setLanguage] = useState<string>("Typescript");
+  const [language, setLanguage] = useState("Typescript");
   const [problem, setProblem] = useState<Problem | null>(null);
-  const [code, setCode] = useState<string>("");
-  const [result, setResult] = useState(null);
-  const [currentTestcase, setCurrentTestcase] = useState<number>(0);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [code, setCode] = useState("");
+  const [result, setResult] = useState<ExecuteResponse | null>(null);
+  const [currentTestcase, setCurrentTestcase] = useState(0);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { user, isLoading } = useUser();
+  const [channel, setChannel] = useState<RealtimeChannel | null>(null);
+
+  const { user } = useUser();
 
   useEffect(() => {
     const fetchProblem = async () => {
       try {
         setLoading(true);
-        // Simulate API call for fetching problem data
         const fetchedProblem: Problem = {
           title: "Problem 1",
           description:
-            "Given a string, return the first non-repeating character",
+            "Given a string, return the first non-repeating character.",
           testcases: [
             { title: "Test Case 1", input: "leetcode", output: "l" },
             { title: "Test Case 2", input: "loveleetcode", output: "v" },
@@ -76,27 +79,75 @@ const CodePopup = ({ isOpen, onClose, onOpenChange }: CodePopupProps) => {
 
     if (isOpen) {
       fetchProblem();
+      const supabase = getSupabase((user?.accessToken as string) || "");
+      const newChannel = supabase.channel("realtime:meeting_activities");
+      newChannel
+        .on("broadcast", { event: "code_input" }, (payload) =>
+          setCode(payload.code)
+        )
+        .on("broadcast", { event: "language_change" }, (payload) =>
+          setLanguage(payload.language)
+        )
+        .on("broadcast", { event: "code_output" }, (payload) =>
+          setResult(payload.output)
+        )
+        .subscribe();
+
+      setChannel(newChannel);
+
+      return () => {
+        supabase.removeChannel(newChannel);
+        setChannel(null);
+      };
     }
-  }, [isOpen, onOpenChange]);
+  }, [isOpen, onOpenChange, user?.accessToken]);
 
-  const handleCodeChange = (newCode: string) => setCode(newCode);
+  const handleCodeChange = async (newCode: string) => {
+    setCode(newCode);
+    if (channel) {
+      await channel.send({
+        type: "broadcast",
+        event: "code_input",
+        code: newCode,
+      });
+    }
+  };
 
-  const handleLanguageChange = (value: string) => setLanguage(value);
+  const handleLanguageChange = async (value: string) => {
+    setLanguage(value);
+    if (channel) {
+      await channel.send({
+        type: "broadcast",
+        event: "language_change",
+        language: value,
+      });
+    }
+  };
 
   const handleCodeRun = async () => {
     try {
       setLoading(true);
       const response = await axios.post<ExecuteResponse>(
         `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/code-enqueue`,
-        { message: JSON.stringify({ code, language: language.toLowerCase() }) },
+        {
+          message: JSON.stringify({ code, language: language.toLowerCase() }),
+        },
         {
           headers: {
             Authorization: `Bearer ${user?.accessToken || ""}`,
           },
         }
       );
-      console.log("Response:", response.data);
+      setResult(response.data);
+      if (channel) {
+        await channel.send({
+          type: "broadcast",
+          event: "code_output",
+          output: response.data,
+        });
+      }
     } catch (err) {
+      console.error("Error running code:", err);
       setError("Error running code. Please check your input or try again.");
     } finally {
       setLoading(false);
@@ -160,7 +211,6 @@ const CodePopup = ({ isOpen, onClose, onOpenChange }: CodePopupProps) => {
                   </Badge>
                 ))}
               </div>
-              Input:
               <div className="p-1 bg-neutral-900 text-white rounded-md shadow-lg border border-neutral-600">
                 <pre className="overflow-x-auto font-mono text-sm whitespace-pre-wrap break-words bg-neutral-900 rounded-md">
                   {problem?.testcases[currentTestcase]?.input}
@@ -169,7 +219,7 @@ const CodePopup = ({ isOpen, onClose, onOpenChange }: CodePopupProps) => {
             </TabsContent>
             <TabsContent value="testresult">
               <div className="p-4">
-                <pre>{result}</pre>
+                <pre>{result?.output || "No result yet."}</pre>
               </div>
             </TabsContent>
           </Tabs>

@@ -1,0 +1,7 @@
+{
+    "imports": {
+        "openai": "https://deno.land/x/openai@v4.20.1/mod.ts",
+        "openai/": "https://deno.land/x/openai@v4.20.1/",
+        "pdf-parse": "npm:pdf-parse/lib/pdf-parse.js"
+    }
+}

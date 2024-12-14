@@ -21,6 +21,7 @@ Deno.serve(async (req) => {
     if (!authHeader) {
       return new Response("Authorization header missing", {
         status: STATUS.UNAUTHORIZED,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
     const token = authHeader.replace("Bearer ", "");
@@ -28,7 +29,7 @@ Deno.serve(async (req) => {
 
     const payload = await verifyToken(token);
 
-    
+
 
     if (!payload) {
       return new Response("Unauthorized", { status: STATUS.UNAUTHORIZED });
@@ -47,22 +48,27 @@ Deno.serve(async (req) => {
     switch (method) {
       case "GET": {
         const meetingId = req.url.split("/").pop();
-        if (!meetingId) {
+        if (!meetingId)
           return new Response("Meeting ID is required", {
             status: STATUS.BAD_REQUEST,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
-        } else {
-          const { data, error } = await supabase
-            .from("chats")
-            .select("*")
-            .eq("meeting_id", meetingId);
-          if (error) {
-            return new Response(error.message, {
-              status: STATUS.INTERNAL_SERVER_ERROR,
-            });
-          }
-          return new Response(JSON.stringify(data), { status: STATUS.OK });
+
+        const { data, error } = await supabase
+          .from("chats")
+          .select("*")
+          .eq("meeting_id", meetingId);
+        if (error) {
+          return new Response(error.message, {
+            status: STATUS.INTERNAL_SERVER_ERROR,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
         }
+        return new Response(JSON.stringify(data), {
+          status: STATUS.OK,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+
       }
       case "POST": {
         const body = await req.json();
@@ -78,13 +84,18 @@ Deno.serve(async (req) => {
         if (error) {
           return new Response(error.message, {
             status: STATUS.INTERNAL_SERVER_ERROR,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
-        return new Response(JSON.stringify(data), { status: STATUS.OK });
+        return new Response(JSON.stringify(data), {
+          status: STATUS.OK,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
       default: {
         return new Response("Method not allowed", {
           status: STATUS.METHOD_NOT_ALLOWED,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
     }
@@ -92,10 +103,12 @@ Deno.serve(async (req) => {
     if (error instanceof Error) {
       return new Response(error.message, {
         status: STATUS.INTERNAL_SERVER_ERROR,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     } else {
       return new Response("An unknown error occurred", {
         status: STATUS.INTERNAL_SERVER_ERROR,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
   }
