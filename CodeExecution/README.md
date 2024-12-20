@@ -1,15 +1,3 @@
-## Arbitrary Code Execution Demo
-
-![screenshot](screenshot.png "screenshot")
-
-Have you ever wondered what happens behind the scenes when you hit "Run" on a code snippet in online development environments like [Go Playground](https://go.dev/play/) or [Repl.it](https://replit.com/)?
-
-## Detailed instructions 
-
-[https://dev.to/acoh3n/lets-build-a-code-execution-engine-4kgi](https://dev.to/acoh3n/lets-build-a-code-execution-engine-4kgi)
-
-## Running the demo
-
 You'll need:
 
 - [Go](https://golang.org/) version 1.19 or better installed.

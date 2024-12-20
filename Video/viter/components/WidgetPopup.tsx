@@ -10,12 +10,18 @@ import CodePopup from "./CodePopup";
 import ProblemSuggestionPopup from "./ProblemSuggestionPopup";
 
 interface WidgetPopupProps {
+  meetingId: string;
   isOpen: boolean;
   onClose: () => void;
   onOpenChange?: (isOpen: boolean) => void; // New prop to inform parent about open state
 }
 
-const WidgetPopup = ({ isOpen, onClose, onOpenChange }: WidgetPopupProps) => {
+const WidgetPopup = ({
+  isOpen,
+  onClose,
+  onOpenChange,
+  meetingId,
+}: WidgetPopupProps) => {
   const [isWhiteboardOpen, setIsWhiteboardOpen] = useState(false); // State for WhiteboardPopup
   const [isChatbotOpen, setIsProblemOpenOpen] = useState(false); // State for ChatbotPopup
   const [isCodeOpen, setIsCodeOpen] = useState(false); // State for CodePopup
@@ -106,7 +112,7 @@ const WidgetPopup = ({ isOpen, onClose, onOpenChange }: WidgetPopupProps) => {
         />
       )}
       {isCodeOpen && (
-        <CodePopup isOpen={isCodeOpen} onClose={() => setIsCodeOpen(false)} />
+        <CodePopup isOpen={isCodeOpen} onClose={() => setIsCodeOpen(false)} meetingId={meetingId}/>
       )}
     </>
   );

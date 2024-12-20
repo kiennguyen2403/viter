@@ -44,34 +44,11 @@ export const tokenProvider = async (userId: string = "") => {
 
 const MeetProvider = ({ meetingId, children }: MeetProviderProps) => {
   const { user: auth0User, isLoading } = useUser();
-  const supabase = getSupabase();
-  const channel = useRef<RealtimeChannel | null>(null);
   const [chatClient, setChatClient] = useState<StreamChat>();
   const [loading, setLoading] = useState(true);
   const [videoClient, setVideoClient] = useState<StreamVideoClient>();
   const [call, setCall] = useState<Call>();
   const [messages, setMessages] = useState<any[]>([]);
-
-  // useEffect(() => {
-  //   channel.current = supabase.channel(`meeting:${meetingId}`, {
-  //     config: {
-  //       broadcast: {
-  //         self: true,
-  //       },
-  //     },
-  //   });
-
-  //   channel.current
-  //     .on("broadcast", { event: "message" }, ({ payload }) => {
-  //       setMessages((prev) => [...prev, payload.message]);
-  //     })
-  //     .subscribe();
-
-  //   return () => {
-  //     channel.current?.unsubscribe();
-  //     channel.current = null;
-  //   };
-  // }, [meetingId, supabase]);
 
   useEffect(() => {
     if (isLoading) return;

@@ -41,7 +41,7 @@ const ToggleButtonContainer = ({
         <div className="flex items-center gap-0.5 [&>div]:w-9 [&>div]:h-9 [&>div]:flex [&>div]:items-center [&>div]:justify-center [&>div]:px-1 [&>div]:py-1.5 [&>div]:rounded-full [&>div]:cursor-pointer [&>div:hover]:bg-[#333]">
           {icons}
           <div title="Settings">
-            <Settings width={20} height={20} color="white" />
+            <Settings width={20} height={20} />
           </div>
         </div>
       </div>

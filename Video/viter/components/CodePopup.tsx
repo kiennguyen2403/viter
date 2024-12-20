@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Popup from "./Popup";
 import { CodeEditor } from "./CodeEditor";
 import {
@@ -30,6 +30,7 @@ interface Problem {
 }
 
 interface CodePopupProps {
+  meetingId: string;
   isOpen: boolean;
   onClose: () => void;
   onOpenChange?: (isOpen: boolean) => void;
@@ -39,7 +40,12 @@ interface ExecuteResponse {
   output: string;
 }
 
-const CodePopup = ({ isOpen, onClose, onOpenChange }: CodePopupProps) => {
+const CodePopup = ({
+  isOpen,
+  onClose,
+  onOpenChange,
+  meetingId,
+}: CodePopupProps) => {
   const [language, setLanguage] = useState("Typescript");
   const [problem, setProblem] = useState<Problem | null>(null);
   const [code, setCode] = useState("");
@@ -47,10 +53,12 @@ const CodePopup = ({ isOpen, onClose, onOpenChange }: CodePopupProps) => {
   const [currentTestcase, setCurrentTestcase] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [channel, setChannel] = useState<RealtimeChannel | null>(null);
+  const [currentTab, setCurrentTab] = useState("testcase");
+  const channel = useRef<RealtimeChannel | null>(null);
 
   const { user } = useUser();
 
+  // Fetch problem details when the popup opens
   useEffect(() => {
     const fetchProblem = async () => {
       try {
@@ -65,90 +73,101 @@ const CodePopup = ({ isOpen, onClose, onOpenChange }: CodePopupProps) => {
           ],
         };
         setProblem(fetchedProblem);
-      } catch (err) {
-        setError("Failed to fetch the problem. Please try again later.");
-        console.error("Error fetching problem:", err);
+      } catch {
+        handleError("Failed to fetch the problem. Please try again later.");
       } finally {
         setLoading(false);
       }
     };
 
-    if (onOpenChange) {
-      onOpenChange(isOpen);
-    }
+    if (onOpenChange) onOpenChange(isOpen);
 
     if (isOpen) {
       fetchProblem();
-      const supabase = getSupabase((user?.accessToken as string) || "");
-      const newChannel = supabase.channel("realtime:meeting_activities");
-      newChannel
-        .on("broadcast", { event: "code_input" }, (payload) =>
-          setCode(payload.code)
-        )
-        .on("broadcast", { event: "language_change" }, (payload) =>
-          setLanguage(payload.language)
-        )
-        .on("broadcast", { event: "code_output" }, (payload) =>
-          setResult(payload.output)
-        )
-        .subscribe();
-
-      setChannel(newChannel);
-
-      return () => {
-        supabase.removeChannel(newChannel);
-        setChannel(null);
-      };
+      setupChannel();
+      return cleanupChannel;
     }
   }, [isOpen, onOpenChange, user?.accessToken]);
 
+  // Setup Supabase channel for real-time updates
+  const setupChannel = () => {
+    if (!channel.current) {
+      const supabase = getSupabase(user?.accessToken as string);
+      channel.current = supabase.channel(meetingId, {
+        config: { broadcast: { self: true } },
+      });
+      channel.current
+        .on("broadcast", { event: "code_input" }, ({ payload }) =>
+          setCode(payload.code)
+        )
+        .on("broadcast", { event: "language_change" }, ({ payload }) =>
+          setLanguage(payload.language)
+        )
+        .subscribe();
+    }
+  };
+
+  const cleanupChannel = () => {
+    if (channel.current) {
+      channel.current.unsubscribe();
+      channel.current = null;
+    }
+  };
+
+  const handleError = (message: string) => {
+    setError(message);
+    console.error(message);
+  };
+
   const handleCodeChange = async (newCode: string) => {
     setCode(newCode);
-    if (channel) {
-      await channel.send({
-        type: "broadcast",
-        event: "code_input",
-        code: newCode,
-      });
+    if (channel.current) {
+      try {
+        await channel.current.send({
+          type: "broadcast",
+          event: "code_input",
+          payload: { code: newCode },
+        });
+      } catch (err) {
+        handleError("Error sending code: " + err);
+      }
     }
   };
 
   const handleLanguageChange = async (value: string) => {
     setLanguage(value);
-    if (channel) {
-      await channel.send({
-        type: "broadcast",
-        event: "language_change",
-        language: value,
-      });
+    if (channel.current) {
+      try {
+        await channel.current.send({
+          type: "broadcast",
+          event: "language_change",
+          payload: { language: value },
+        });
+      } catch (err) {
+        handleError("Error changing language: " + err);
+      }
     }
   };
 
   const handleCodeRun = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
       const response = await axios.post<ExecuteResponse>(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/code-enqueue`,
-        {
-          message: JSON.stringify({ code, language: language.toLowerCase() }),
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${user?.accessToken || ""}`,
-          },
-        }
+        "http://localhost:8000/execute",
+        { code, language: language.toLowerCase() },
+        { headers: { Authorization: `Bearer ${user?.accessToken || ""}` } }
       );
       setResult(response.data);
-      if (channel) {
-        await channel.send({
+      if (channel.current) {
+        await channel.current.send({
           type: "broadcast",
           event: "code_output",
-          output: response.data,
+          payload: { output: response.data.output },
         });
       }
-    } catch (err) {
-      console.error("Error running code:", err);
-      setError("Error running code. Please check your input or try again.");
+      setCurrentTab("testresult");
+    } catch {
+      handleError("Error running code. Please check your input or try again.");
     } finally {
       setLoading(false);
     }
@@ -170,7 +189,7 @@ const CodePopup = ({ isOpen, onClose, onOpenChange }: CodePopupProps) => {
               <SelectValue placeholder={language} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="Typescript">TypeScript</SelectItem>
+              <SelectItem value="Node">TypeScript</SelectItem>
               <SelectItem value="Python">Python</SelectItem>
               <SelectItem value="C++">C++</SelectItem>
               <SelectItem value="Java">Java</SelectItem>
@@ -190,7 +209,11 @@ const CodePopup = ({ isOpen, onClose, onOpenChange }: CodePopupProps) => {
         </div>
         <Separator />
         <div className="mb-4 ml-3 p-4">
-          <Tabs defaultValue="testcase" className="w-[400px]">
+          <Tabs
+            value={currentTab}
+            onValueChange={(value) => setCurrentTab(value)} // Add this handler
+            className="w-[400px]"
+          >
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="testcase">Test Cases</TabsTrigger>
               <TabsTrigger value="testresult">Test Result</TabsTrigger>
@@ -211,20 +234,42 @@ const CodePopup = ({ isOpen, onClose, onOpenChange }: CodePopupProps) => {
                   </Badge>
                 ))}
               </div>
-              <div className="p-1 bg-neutral-900 text-white rounded-md shadow-lg border border-neutral-600">
-                <pre className="overflow-x-auto font-mono text-sm whitespace-pre-wrap break-words bg-neutral-900 rounded-md">
-                  {problem?.testcases[currentTestcase]?.input}
+              <div className="p-4 bg-neutral-900 text-white rounded-md shadow-lg border border-neutral-600">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-semibold text-gray-400">
+                    Testcase Input
+                  </span>
+                  <Button
+                    onClick={() =>
+                      navigator.clipboard.writeText(
+                        problem?.testcases[currentTestcase]?.input || ""
+                      )
+                    }
+                  >
+                    Copy
+                  </Button>
+                </div>
+                <pre className="overflow-x-auto font-mono text-sm whitespace-pre-wrap break-words bg-neutral-800 rounded-md p-3">
+                  {problem?.testcases[currentTestcase]?.input ||
+                    "No input available."}
                 </pre>
               </div>
             </TabsContent>
             <TabsContent value="testresult">
-              <div className="p-4">
-                <pre>{result?.output || "No result yet."}</pre>
+              <div className="p-4 bg-neutral-900 text-white rounded-md shadow-lg border border-neutral-600">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-semibold text-gray-400">
+                    Output
+                  </span>
+                </div>
+                <pre className="overflow-x-auto font-mono text-sm whitespace-pre-wrap break-words bg-neutral-900 rounded-md p-2">
+                  {result?.output || "No result yet."}
+                </pre>
               </div>
             </TabsContent>
           </Tabs>
         </div>
-        {error && <div className="text-red-500">{error}</div>}
+        {error && <div className="text-red-500 pl-7">{error}</div>}
       </div>
     </Popup>
   );

@@ -3,7 +3,7 @@ package handler
 import (
 	"net/http"
 	"strings"
-	"time"
+
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 	"github.com/runabol/tork"
@@ -12,41 +12,20 @@ import (
 	"github.com/runabol/tork/middleware/web"
 )
 
-type RequestBody struct {
-	Type      string     `json:"type"`
-	Table     string     `json:"table"`
-	Record    Record     `json:"record"`
-	Schema    string     `json:"schema"`
-	OldRecord *OldRecord `json:"old_record"` // Use pointer to handle null values
-}
-
-// Record represents the record field in the payload
-type Record struct {
-	VT         time.Time `json:"vt"` // ISO 8601 timestamp
-	MsgID      int       `json:"msg_id"`
-	Message    Message   `json:"message"`
-	ReadCT     int       `json:"read_ct"`
-	EnqueuedAt time.Time `json:"enqueued_at"` // ISO 8601 timestamp
-}
-
-type OldRecord struct{}
-
-// Message represents the message field in the record
-type Message struct {
+type ExecRequest struct {
 	Code     string `json:"code"`
 	Language string `json:"language"`
 }
 
-
 func Handler(c web.Context) error {
-	er := RequestBody{}
+	er := ExecRequest{}
 
 	if err := c.Bind(&er); err != nil {
 		c.Error(http.StatusBadRequest, errors.Wrapf(err, "error binding request"))
 		return nil
 	}
 
-	log.Debug().Msgf("%s", er.Record.Message.Code)
+	log.Debug().Msgf("%s", er.Code)
 
 	task, err := buildTask(er)
 	if err != nil {
@@ -86,13 +65,12 @@ func Handler(c web.Context) error {
 	}
 }
 
-func buildTask(er RequestBody) (input.Task, error) {
+func buildTask(er ExecRequest) (input.Task, error) {
 	var image string
 	var run string
 	var filename string
 
-	log.Debug().Msgf("language: %s", er.Record.Message.Language)
-	switch strings.TrimSpace(er.Record.Message.Language) {
+	switch strings.TrimSpace(er.Language) {
 	case "":
 		return input.Task{}, errors.Errorf("require: language")
 	case "python":
@@ -103,6 +81,10 @@ func buildTask(er RequestBody) (input.Task, error) {
 		image = "node:16"
 		filename = "script.js"
 		run = "node script.js > $TORK_OUTPUT"
+	case "ruby":
+		image = "ruby:3"
+		filename = "script.rb"
+		run = "ruby script.rb > $TORK_OUTPUT"
 	case "java":
 		image = "openjdk:17"
 		filename = "Main.java"
@@ -120,32 +102,20 @@ func buildTask(er RequestBody) (input.Task, error) {
 		filename = "script"
 		run = "sh ./script > $TORK_OUTPUT"
 	default:
-		return input.Task{}, errors.Errorf("unknown language: %s", er.Record.Message.Language)
+		return input.Task{}, errors.Errorf("unknown language: %s", er.Language)
 	}
 
 	return input.Task{
 		Name:    "execute code",
 		Image:   image,
 		Run:     run,
-		Timeout: "5s",
+		Timeout: "120s",
 		Limits: &input.Limits{
 			CPUs:   "1",
 			Memory: "20m",
 		},
 		Files: map[string]string{
-			filename: er.Record.Message.Code,
+			filename: er.Code,
 		},
 	}, nil
-}
-
-
-func HealthCheck(c web.Context) error {
-	return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
-}
-
-func CORS(c web.Context) error {
-	c.Response().Header().Set("Access-Control-Allow-Origin", "*")
-	c.Response().Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-	c.Response().Header().Set("Access-Control-Allow-Headers", "Content-Type")
-	return nil
 }

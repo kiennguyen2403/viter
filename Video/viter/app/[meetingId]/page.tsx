@@ -129,7 +129,7 @@ const Lobby = () => {
         getCurrentCall();
       }
     }
-  }, [call, callingState, connectedUser, joining, newMeeting, validMeetingId]);
+  }, [call, callingState, connectedUser, joining, meetingId, newMeeting, user?.accessToken, validMeetingId]);
 
   useEffect(() => {
     setNewMeeting(newMeeting);

@@ -1,13 +1,12 @@
-import React from 'react';
+import React from "react";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface SettingsProps {
   width?: number;
   height?: number;
-  color?: string;
 }
 
-const Settings = ({ width = 24, height = 24 }) => {
+const Settings = ({ width = 24, height = 24,  }) => {
   return (
     <svg
       width={width}

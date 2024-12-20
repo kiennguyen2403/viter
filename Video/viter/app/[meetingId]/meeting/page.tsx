@@ -183,7 +183,11 @@ const Meeting = ({ params }: MeetingProps) => {
           />
         )}
         {openPopup === "widget" && (
-          <WidgetPopup isOpen={true} onClose={() => setOpenPopup(null)} />
+          <WidgetPopup
+            isOpen={true}
+            onClose={() => setOpenPopup(null)}
+            meetingId={meetingId}
+          />
         )}
         {isCreator && <MeetingPopup />}
         <audio
