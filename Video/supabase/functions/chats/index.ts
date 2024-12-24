@@ -29,8 +29,6 @@ Deno.serve(async (req) => {
 
     const payload = await verifyToken(token);
 
-
-
     if (!payload) {
       return new Response("Unauthorized", { status: STATUS.UNAUTHORIZED });
     }

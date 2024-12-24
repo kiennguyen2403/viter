@@ -192,6 +192,13 @@ const Header = ({ navItems = true, isSidebarOpen = false }: HeaderProps) => {
             >
               Dashboard
             </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.push("/jobs")}
+            >
+              Jobs
+            </Button>
           </>
         )}
       </div>

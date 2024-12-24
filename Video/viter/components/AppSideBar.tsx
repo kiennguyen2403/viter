@@ -17,6 +17,7 @@ import { useUser } from "@auth0/nextjs-auth0/client";
 import { Button } from "react-day-picker";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Organization from "./icons/Organization";
 
 // Menu items.
 const items = [
@@ -24,6 +25,11 @@ const items = [
     title: "Home",
     url: "/",
     icon: Home,
+  },
+  {
+    title: "Organization",
+    url: "/dashboard/organization",
+    icon: Organization,
   },
   {
     title: "Calendar",
