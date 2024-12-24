@@ -9,6 +9,9 @@ import { verifyToken } from "../utils/auth.ts";
 import { Supabase } from "../utils/supabase.ts";
 import { STATUS } from "../type/type.ts";
 
+
+
+
 Deno.serve(async (req) => {
   try {
     const method = req.method;
@@ -46,10 +49,6 @@ Deno.serve(async (req) => {
     const name = query.get("name");
     const position = query.get("position");
     const location = query.get("location");
-
-
-
-
 
     switch (method) {
       case "GET": {
