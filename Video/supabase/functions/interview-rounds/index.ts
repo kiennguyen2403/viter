@@ -9,14 +9,13 @@ import { Application, Router } from "oak";
 import { oakCors } from "cors";
 
 const router = new Router();
-router.options("/interview-rounds", (ctx) => {
-  ctx.response.headers.set("Access-Control-Allow-Headers", "Authorization, Content-Type");
-  ctx.response.headers.set("Access-Control-Allow-Methods", "GET, PUT, DELETE");
-  ctx.response.headers.set("Access-Control-Allow-Origin", "*");
-  ctx.response.status = 200;
-});
-
 router
+  .options("/interview-rounds", (ctx) => {
+    ctx.response.headers.set("Access-Control-Allow-Headers", "Authorization, Content-Type");
+    ctx.response.headers.set("Access-Control-Allow-Methods", "GET, PUT, DELETE");
+    ctx.response.headers.set("Access-Control-Allow-Origin", "*");
+    ctx.response.status = 200;
+  })
   .get("/interview-rounds/:id", async (ctx) => {
     const id = ctx.params.id;
     const token = ctx.request.headers.get("Authorization")?.replace("Bearer ", "");
