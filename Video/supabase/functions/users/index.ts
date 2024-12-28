@@ -6,7 +6,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { Supabase } from "../utils/supabase.ts";
 import { verifyToken } from "../utils/auth.ts";
-import { corsHeaders } from "../_shared/cors.ts";
 import { Application, Router } from "oak";
 import { oakCors } from "cors";
 
