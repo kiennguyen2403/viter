@@ -3,20 +3,21 @@
 import Spinner from "@/components/Spinner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import useAxiosInterceptor from "@/utils/http-interceptor";
 import { useUser } from "@auth0/nextjs-auth0/client";
-import axios from "axios";
 import { useState } from "react";
 
 export default function NoteTab() {
   const [note, setNote] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const { user, isLoading } = useUser();
+  const apiClient = useAxiosInterceptor();
   const handleSave = async () => {
     try {
       setIsSubmitting(true);
       if (!note || !user) return;
-      await axios.post(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/note`,
+      await apiClient.post(
+        `/functions/v1/note`,
         { note },
         {
           headers: { Authorization: `Bearer ${user?.accessToken || ""}` },

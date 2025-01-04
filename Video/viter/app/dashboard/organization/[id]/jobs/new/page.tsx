@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import axios from "axios";
 import { useParams } from "next/navigation";
 import { useUser } from "@auth0/nextjs-auth0/client";
 
@@ -25,6 +24,7 @@ import { Badge } from "@/components/ui/badge";
 import { Cross1Icon } from "@radix-ui/react-icons";
 import Spinner from "@/components/Spinner";
 import { Textarea } from "@/components/ui/textarea";
+import useAxiosInterceptor from "@/utils/http-interceptor";
 
 // Validation Schema
 const jobFormSchema = z.object({
@@ -45,6 +45,7 @@ export default function CreateJobPage() {
   const { user, isLoading } = useUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [skills, setSkills] = useState<string[]>([]);
+  const apiClient = useAxiosInterceptor();
 
   const form = useForm<JobFormValues>({
     resolver: zodResolver(jobFormSchema),
@@ -76,8 +77,8 @@ export default function CreateJobPage() {
   const handleSubmit = async (values: JobFormValues) => {
     setIsSubmitting(true);
     try {
-      await axios.post(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/${meetingId}`,
+      await apiClient.post(
+        `/${meetingId}`,
         values,
         {
           headers: {

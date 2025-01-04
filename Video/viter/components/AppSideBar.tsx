@@ -18,8 +18,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Organization from "./icons/Organization";
 import { useEffect, useState, useMemo } from "react";
-import axios from "axios";
 import Spinner from "./Spinner";
+import useAxiosInterceptor from "@/utils/http-interceptor";
 
 // Initial menu items.
 const initialItems = [
@@ -35,6 +35,7 @@ export function AppSidebar() {
   const router = useRouter();
   const [menuItems, setMenuItems] = useState(initialItems);
   const [isFetching, setIsFetching] = useState(false);
+  const apiClient = useAxiosInterceptor();
 
   useEffect(() => {
     const fetchUserInformation = async () => {
@@ -42,8 +43,8 @@ export function AppSidebar() {
 
       try {
         setIsFetching(true);
-        const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/users/me`,
+        const response = await apiClient.get(
+          `/functions/v1/users/me`,
           {
             headers: { Authorization: `Bearer ${user.accessToken}` },
           }

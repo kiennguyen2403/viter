@@ -21,7 +21,7 @@ import Header from "@/components/Header";
 import MeetingPreview from "@/components/MeetingPreview";
 import Spinner from "@/components/Spinner";
 import TextField from "@/components/TextField";
-import axios from "axios";
+import useAxiosInterceptor from "@/utils/http-interceptor";
 
 const Lobby = () => {
   const { meetingId } = useParams();
@@ -42,6 +42,7 @@ const Lobby = () => {
   const [participants, setParticipants] = useState<CallParticipantResponse[]>(
     []
   );
+  const apiClient = useAxiosInterceptor();
   const isGuest = !user;
 
   useEffect(() => {
@@ -75,10 +76,8 @@ const Lobby = () => {
             ],
           },
         });
-        await axios.put(
-          `${
-            process.env.NEXT_PUBLIC_SUPABASE_URL
-          }/functions/v1/meetings`,
+        await apiClient.put(
+          `/functions/v1/meetings`,
           {
             nanoid: meetingId,
             status: "LIVE",
@@ -100,8 +99,8 @@ const Lobby = () => {
 
     const updateParticipantStatus = async () => {
       try {
-        await axios.put(
-          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/participants`,
+        await apiClient.put(
+          `/functions/v1/participants`,
           {
             status: "STAND_BY",
           },
@@ -129,7 +128,16 @@ const Lobby = () => {
         getCurrentCall();
       }
     }
-  }, [call, callingState, connectedUser, joining, meetingId, newMeeting, user?.accessToken, validMeetingId]);
+  }, [
+    call,
+    callingState,
+    connectedUser,
+    joining,
+    meetingId,
+    newMeeting,
+    user?.accessToken,
+    validMeetingId,
+  ]);
 
   useEffect(() => {
     setNewMeeting(newMeeting);

@@ -4,10 +4,10 @@ import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
 import { TabsContent } from "@radix-ui/react-tabs";
 import { Input } from "./ui/input";
 import { Table, TableBody, TableCell, TableHead, TableRow } from "./ui/table";
-import axios from "axios";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import { Button } from "./ui/button";
 import Spinner from "./Spinner";
+import useAxiosInterceptor from "@/utils/http-interceptor";
 
 interface Problem {
   id: number;
@@ -32,12 +32,13 @@ const ProblemSuggestionPopup: React.FC<ProblemSuggestionPopupProps> = ({
   const [input, setInput] = useState<string>("");
   const [isFetching, setIsFetching] = useState<boolean>(false);
   const { user, isLoading } = useUser();
+  const apiClient = useAxiosInterceptor();
 
   const fetchProblems = async (query: string = "") => {
     setIsFetching(true);
     try {
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/problems/`,
+      const response = await apiClient.get(
+        `/functions/v1/problems/`,
         {
           params: query ? { query } : undefined,
           headers: { Authorization: `Bearer ${user?.accessToken || ""}` },
@@ -60,8 +61,8 @@ const ProblemSuggestionPopup: React.FC<ProblemSuggestionPopupProps> = ({
 
     setIsFetching(true);
     try {
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/problems-vector`,
+      const response = await apiClient.post(
+        `/functions/v1/problems-vector`,
         formData,
         {
           headers: {

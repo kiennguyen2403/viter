@@ -1,5 +1,4 @@
 "use client";
-import axios from "axios";
 import { useEffect, useState } from "react";
 import {
   Table,
@@ -16,6 +15,7 @@ import Spinner from "@/components/Spinner";
 import { Button } from "@/components/ui/button";
 import Plus from "@/components/icons/Plus";
 import { useRouter } from "next/navigation";
+import useAxiosInterceptor from "@/utils/http-interceptor";
 
 interface Job {
   id: string;
@@ -31,14 +31,15 @@ export default function JobsTab() {
   const [isFetching, setIsFetching] = useState(false);
   const router = useRouter();
   const { user, isLoading } = useUser();
+  const apiClient = useAxiosInterceptor();
 
   useEffect(() => {
     const fetchJobs = async () => {
       try {
         if (!user) return;
         setIsFetching(true);
-        const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/jobs`,
+        const response = await apiClient.get(
+          `/functions/v1/jobs`,
           {
             headers: {
               Authorization: `Bearer ${user.accessToken}`,
@@ -53,7 +54,7 @@ export default function JobsTab() {
       }
     };
     fetchJobs();
-  }, [user]);
+  }, [apiClient, user]);
 
   const handleOnClick = () => {
     router.push("/dashboard/organization/jobs/new");

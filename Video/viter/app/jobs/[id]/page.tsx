@@ -1,8 +1,8 @@
 "use client";
 import Header from "@/components/Header";
 import Spinner from "@/components/Spinner";
+import useAxiosInterceptor from "@/utils/http-interceptor";
 import { useUser } from "@auth0/nextjs-auth0/client";
-import axios from "axios";
 import clsx from "clsx";
 import { useParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
@@ -15,6 +15,7 @@ export default function JobPage() {
   const { id } = useParams();
   const { user, isLoading } = useUser();
   const [isFetching, setIsFetching] = useState(false);
+  const apiClient = useAxiosInterceptor();
 
   const [job, setJob] = useState<Job | null>(null);
 
@@ -24,8 +25,8 @@ export default function JobPage() {
 
       setIsFetching(true);
       try {
-        const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_URL}/functions/v1/jobs/${id}`,
+        const response = await apiClient.get(
+          `/functions/v1/jobs/${id}`,
           {
             headers: {
               Authorization: `Bearer ${user.accessToken}`,
@@ -41,7 +42,7 @@ export default function JobPage() {
     };
 
     fetchJob();
-  }, [user]);
+  }, [apiClient, id, user]);
 
   return (
     <div

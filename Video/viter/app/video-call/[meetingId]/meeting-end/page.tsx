@@ -4,9 +4,9 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { CallingState, useCallStateHooks } from "@stream-io/video-react-sdk";
 import { Button } from "@/components/ui/button";
-import axios from "axios";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import Link from "next/link";
+import useAxiosInterceptor from "@/utils/http-interceptor";
 
 interface MeetingEndProps {
   params: {
@@ -25,13 +25,14 @@ const MeetingEnd = ({ params, searchParams }: MeetingEndProps) => {
   const callingState = useCallCallingState();
   const audioRef = useRef<HTMLAudioElement>(null);
   const [countdown, setCountdown] = useState(60);
+  const apiClient = useAxiosInterceptor();
   const isInvalidMeeting = searchParams?.invalid === "true";
 
   // Function to update participant status
   const updateParticipantStatus = async () => {
     try {
-      await axios.post(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/participants/${meetingId}`,
+      await apiClient.post(
+        `/functions/v1/participants/${meetingId}`,
         { status: "LEAVE" },
         { headers: { Authorization: `Bearer ${user?.accessToken || ""}` } }
       );

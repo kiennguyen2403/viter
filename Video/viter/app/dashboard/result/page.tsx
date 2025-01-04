@@ -54,6 +54,7 @@ import { AppContext } from "@/contexts/AppProvider";
 import { Badge } from "@/components/ui/badge";
 import { Cross1Icon, ReloadIcon } from "@radix-ui/react-icons";
 import { useRouter } from "next/navigation";
+import useAxiosInterceptor from "@/utils/http-interceptor";
 
 // Interfaces
 interface Meeting {
@@ -87,6 +88,7 @@ const Page = () => {
   const [code, setCode] = useState("");
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [emails, setEmails] = useState<string[]>([]);
+  const apiClient = useAxiosInterceptor();
 
   // Form
   const form = useForm<z.infer<typeof formSchema>>({
@@ -118,8 +120,8 @@ const Page = () => {
     description?: string
   ) => {
     try {
-      await axios.post(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/meetings/`,
+      await apiClient.post(
+        `/functions/v1/meetings/`,
         {
           title,
           description: description || "",
@@ -138,8 +140,8 @@ const Page = () => {
 
   const updateParticipantStatus = async (meetingId: string) => {
     try {
-      await axios.put(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/participants`,
+      await apiClient.put(
+        `/functions/v1/participants`,
         {
           status: "STAND_BY",
         },
@@ -235,7 +237,7 @@ const Page = () => {
         if (!user?.accessToken) return;
         setIsMeetingLoading(true);
 
-        const participantsResponse = await axios.get(
+        const participantsResponse = await apiClient.get(
           `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/participants/`,
           {
             headers: { Authorization: `Bearer ${user?.accessToken}` },
@@ -251,7 +253,7 @@ const Page = () => {
         ];
 
         const meetingPromises = participantMeetings.map((meetingId: any) =>
-          axios.get(
+          apiClient.get(
             `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/meetings/${meetingId}`,
             {
               headers: { Authorization: `Bearer ${user?.accessToken || ""}` },
@@ -272,7 +274,7 @@ const Page = () => {
     };
 
     fetchParticipants();
-  }, [user?.accessToken]);
+  }, [apiClient, user?.accessToken]);
 
   // JSX
 

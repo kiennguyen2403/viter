@@ -10,8 +10,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import useAxiosInterceptor from "@/utils/http-interceptor";
 import { useUser } from "@auth0/nextjs-auth0/client";
-import axios from "axios";
+
 import { useCallback, useEffect, useState } from "react";
 
 interface Problem {
@@ -27,6 +28,7 @@ export default function ProblemsTab() {
   const [input, setInput] = useState<string>("");
   const [isFetching, setIsFetching] = useState<boolean>(false);
   const { user, isLoading } = useUser();
+  const apiClient = useAxiosInterceptor();
   const renderTable = (data: Problem[]) => (
     <Table className="w-full">
       <TableRow>
@@ -60,8 +62,8 @@ export default function ProblemsTab() {
     async (query: string = "") => {
       setIsFetching(true);
       try {
-        const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/problems/`,
+        const response = await apiClient.get(
+          `/functions/v1/problems/`,
           {
             params: query ? { query } : undefined,
             headers: { Authorization: `Bearer ${user?.accessToken || ""}` },
@@ -86,8 +88,8 @@ export default function ProblemsTab() {
 
     setIsFetching(true);
     try {
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/problems-vector`,
+      const response = await apiClient.post(
+        `/functions/v1/problems-vector`,
         formData,
         {
           headers: {

@@ -56,6 +56,7 @@ import {
 } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
+import useAxiosInterceptor from "@/utils/http-interceptor";
 
 // Define schema for form validation
 const formSchema = z.object({
@@ -74,6 +75,7 @@ const Page = () => {
   const [isScheduleOpen, setIsScheduleOpen] = useState(false);
   const [code, setCode] = useState("");
   const [emails, setEmails] = useState<string[]>([]);
+  const apiClient = useAxiosInterceptor();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [checkingCode, setCheckingCode] = useState(false);
   const [isCreatingNewMeeting, setIsCreatingNewMeeting] = useState(false);
@@ -124,8 +126,8 @@ const Page = () => {
     description?: string
   ) => {
     try {
-      await axios.post(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/meetings`,
+      await apiClient.post(
+        `/functions/v1/meetings`,
         {
           title,
           description: description || "",
@@ -144,14 +146,14 @@ const Page = () => {
 
   const updateParticipantStatus = async (meetingId: string) => {
     try {
-      await axios.put(
+      await apiClient.put(
         `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/participants`,
         {
           status: "STAND_BY",
         },
         {
           params: {
-            "nano_id": meetingId,
+            nano_id: meetingId,
           },
           headers: {
             Authorization: `Bearer ${user?.accessToken || ""}`,

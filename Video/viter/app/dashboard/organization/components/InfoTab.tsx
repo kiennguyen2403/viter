@@ -1,7 +1,7 @@
 "use client";
 import Spinner from "@/components/Spinner";
+import useAxiosInterceptor from "@/utils/http-interceptor";
 import { useUser } from "@auth0/nextjs-auth0/client";
-import axios from "axios";
 import { useEffect, useState } from "react";
 
 export default function InfoTab() {
@@ -11,14 +11,15 @@ export default function InfoTab() {
   } | null>(null);
   const [isFetching, setIsFetching] = useState(false);
   const { user, isLoading } = useUser();
+  const apiClient = useAxiosInterceptor();
 
   useEffect(() => {
     const fetchOrganization = async () => {
       try {
         if (!user) return;
         setIsFetching(true);
-        const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/companies`,
+        const response = await apiClient.get(
+          `/functions/v1/companies`,
           {
             headers: {
               Authorization: `Bearer ${user.accessToken}`,
@@ -33,7 +34,7 @@ export default function InfoTab() {
       }
     };
     fetchOrganization();
-  }, [user]);
+  }, [apiClient, user]);
 
   return (
     <div className="w-full h-full flex-1 justify-center items-center">

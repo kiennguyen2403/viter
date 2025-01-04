@@ -3,7 +3,6 @@ import { useEffect, useState, useRef } from "react";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import Header from "@/components/Header";
 import clsx from "clsx";
-import axios from "axios";
 import Spinner from "@/components/Spinner";
 import { Button } from "@/components/ui/button";
 import Plus from "@/components/icons/Plus";
@@ -28,6 +27,7 @@ import { Input } from "@/components/ui/input";
 import { ReloadIcon } from "@radix-ui/react-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import File from "@/components/icons/File";
+import useAxiosInterceptor from "@/utils/http-interceptor";
 
 interface FileData {
   id: string;
@@ -44,37 +44,37 @@ const Page = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const apiClient = useAxiosInterceptor();
 
   const form = useForm({
     resolver: zodResolver(formSchema),
   });
 
-  const fetchFiles = async () => {
-    if (!user?.accessToken) return;
-
-    setIsFileLoading(true);
-    setError(null); // Reset error state
-    try {
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/resumes`,
-        {
-          headers: {
-            Authorization: `Bearer ${user?.accessToken}`,
-          },
-        }
-      );
-      setFiles(response.data);
-    } catch (error) {
-      console.error("Error fetching files", error);
-      setError("Failed to load files. Please try again.");
-    } finally {
-      setIsFileLoading(false);
-    }
-  };
-
   useEffect(() => {
+    const fetchFiles = async () => {
+      if (!user?.accessToken) return;
+
+      setIsFileLoading(true);
+      setError(null); // Reset error state
+      try {
+        const response = await apiClient.get(
+          `/functions/v1/resumes`,
+          {
+            headers: {
+              Authorization: `Bearer ${user?.accessToken}`,
+            },
+          }
+        );
+        setFiles(response.data);
+      } catch (error) {
+        console.error("Error fetching files", error);
+        setError("Failed to load files. Please try again.");
+      } finally {
+        setIsFileLoading(false);
+      }
+    };
     fetchFiles();
-  }, [user?.accessToken]);
+  }, [apiClient, user?.accessToken]);
 
   const handleUpload = async () => {
     if (!user?.accessToken) return;
@@ -91,8 +91,8 @@ const Page = () => {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      await axios.post(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/resumes`,
+      await apiClient.post(
+        `/functions/v1/resumes`,
         formData,
         {
           headers: {
