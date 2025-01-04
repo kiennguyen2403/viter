@@ -1,3 +1,4 @@
+"use client";
 import Header from "@/components/Header";
 import Spinner from "@/components/Spinner";
 import { useUser } from "@auth0/nextjs-auth0/client";
