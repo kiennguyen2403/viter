@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from "react";
 import {
   combineComparators,
   Comparator,
@@ -9,12 +9,11 @@ import {
   StreamVideoParticipant,
   useCall,
   useCallStateHooks,
-} from '@stream-io/video-react-sdk';
-import clsx from 'clsx';
+} from "@stream-io/video-react-sdk";
+import clsx from "clsx";
 
-import ParticipantViewUI from './ParticipantViewUI';
-import useAnimateVideoLayout from '../hooks/useAnimateVideoLayout';
-import VideoPlaceholder from './VideoPlaceholder';
+import useAnimateVideoLayout from "../hooks/useAnimateVideoLayout";
+import VideoPlaceholder from "./VideoPlaceholder";
 
 const GROUP_SIZE = 6;
 
@@ -63,9 +62,9 @@ const GridLayout = () => {
     <div
       ref={ref}
       className={clsx(
-        'w-full relative overflow-hidden',
-        'str-video__paginated-grid-layout',
-        'mg-auto'
+        "w-full relative overflow-hidden",
+        "str-video__paginated-grid-layout",
+        "mg-auto"
       )}
     >
       {pageCount > 1 && (
@@ -76,20 +75,22 @@ const GridLayout = () => {
         />
       )}
       <div
-        className={clsx('str-video__paginated-grid-layout__group', {
-          'str-video__paginated-grid-layout--one': selectedGroup.length === 1,
-          'str-video__paginated-grid-layout--two-four':
+        className={clsx("str-video__paginated-grid-layout__group", {
+          "str-video__paginated-grid-layout--one": selectedGroup.length === 1,
+          "str-video__paginated-grid-layout--two-four":
             selectedGroup.length >= 2 && selectedGroup.length <= 4,
-          'str-video__paginated-grid-layout--five-nine':
+          "str-video__paginated-grid-layout--five-nine":
             selectedGroup.length >= 5 && selectedGroup.length <= 9,
+          "w-full h-full": true,
+          "gap-2": true,
         })}
       >
         {call && selectedGroup.length > 0 && (
           <>
             {selectedGroup.map((participant) => (
               <ParticipantView
+                className="w-full h-full"
                 participant={participant}
-                ParticipantViewUI={ParticipantViewUI}
                 VideoPlaceholder={VideoPlaceholder}
                 key={participant.sessionId}
               />

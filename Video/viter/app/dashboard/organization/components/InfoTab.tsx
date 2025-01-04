@@ -18,7 +18,12 @@ export default function InfoTab() {
         if (!user) return;
         setIsFetching(true);
         const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_URL}/functions/v1/organization`
+          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/companies`,
+          {
+            headers: {
+              Authorization: `Bearer ${user.accessToken}`,
+            },
+          }
         );
         setOrganization(response.data);
       } catch (error) {

@@ -178,7 +178,7 @@ const Page = () => {
       const id = await generateMeetingId();
       if (id) {
         setNewMeeting(true);
-        router.push(`/${id}`);
+        router.push(`/video-call/${id}`);
       }
     } catch (e) {
       console.error("Error creating instant meeting:", e);
@@ -285,7 +285,6 @@ const Page = () => {
     >
       <Header isSidebarOpen />
       <div className="flex flex-grow overflow-y-hidden">
-        {/* Main Content */}
         <div className="flex w-full">
           <div className="flex-grow p-4 bg-white">
             <div className="flex flex-col items-start justify-center h-auto p-6 overflow-y-auto">

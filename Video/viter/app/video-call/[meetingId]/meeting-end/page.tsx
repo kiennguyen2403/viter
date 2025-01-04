@@ -119,7 +119,7 @@ const MeetingEnd = ({ params, searchParams }: MeetingEndProps) => {
             <Button
               size={"sm"}
               variant={"secondary"}
-              onClick={() => router.push(`/${meetingId}`)}
+              onClick={() => router.push(`/video-call/${meetingId}`)}
             >
               Rejoin
             </Button>

@@ -10,7 +10,6 @@ import clsx from "clsx";
 import { AppContext, MEETING_ID_REGEX } from "@/contexts/AppProvider";
 import { API_KEY, CALL_TYPE } from "@/contexts/MeetProvider";
 import Header from "@/components/Header";
-
 import Videocall from "@/components/icons/Videocall";
 import {
   ErrorFromResponse,
@@ -68,7 +67,7 @@ const formSchema = z.object({
 
 const GUEST_USER: User = { id: "guest", type: "guest" };
 
-const Home = () => {
+const Page = () => {
   const { setNewMeeting } = useContext(AppContext);
   const { user, isLoading } = useUser();
   const [isOpen, setIsOpen] = useState(false);
@@ -186,7 +185,7 @@ const Home = () => {
       const id = await generateMeetingId();
       if (id) {
         setNewMeeting(true);
-        router.push(`/${id}`);
+        router.push(`/video-call/${id}`);
       }
     } catch (e) {
       console.error("Error creating instant meeting:", e);
@@ -222,7 +221,7 @@ const Home = () => {
     try {
       const response = await call.get();
       if (response.call) {
-        router.push(`/${code}`);
+        router.push(`/video-call/${code}`);
       }
     } catch (e) {
       if (e instanceof ErrorFromResponse && e.status === 404) {
@@ -491,4 +490,4 @@ const Home = () => {
   );
 };
 
-export default Home;
+export default Page;

@@ -213,11 +213,11 @@ const Page = () => {
     const call = client.call(CALL_TYPE, meeting.nanoid);
     try {
       const response = await call.get();
-      if (response.call) router.push(`/${meeting.nanoid}`);
+      if (response.call) router.push(`/video-call/${meeting.nanoid}`);
     } catch (e) {
       if (e instanceof ErrorFromResponse && e.status === 404) {
         setNewMeeting(true);
-        router.push(`/${meeting.nanoid}`);
+        router.push(`/video-call/${meeting.nanoid}`);
       }
     }
   };
@@ -362,7 +362,7 @@ const Page = () => {
               <p>Share this link with your team to schedule a meeting later</p>
               <div className="flex flex-col items-center gap-2 mt-4">
                 <div className="flex w-full max-w-sm items-center space-x-2">
-                  <Input type="text" placeholder="Email" value={code} />
+                  <Input type="text" placeholder="4121234" value={code} />
                   <Button onClick={() => navigator.clipboard.writeText(code)}>
                     <Copy /> Copy
                   </Button>

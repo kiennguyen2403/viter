@@ -35,6 +35,7 @@ const Header = ({ navItems = true, isSidebarOpen = false }: HeaderProps) => {
   const { currentDateTime } = useTime();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [hasNewNotifications, setHasNewNotifications] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
   const isInitialized = useRef(false);
 
   useEffect(() => {
@@ -44,9 +45,8 @@ const Header = ({ navItems = true, isSidebarOpen = false }: HeaderProps) => {
 
     const fetchUserDataAndNotifications = async () => {
       try {
+        setIsFetching(true);
         isInitialized.current = true;
-
-        // Fetch user data
         const { data: userData, error: userError } = await supabase
           .from("users")
           .select("id")
@@ -124,6 +124,9 @@ const Header = ({ navItems = true, isSidebarOpen = false }: HeaderProps) => {
         };
       } catch (error) {
         console.error("Error initializing notifications:", error);
+      } finally {
+        isInitialized.current = true;
+        setIsFetching(false);
       }
     };
 

@@ -7,7 +7,7 @@ import JobsTab from "./components/JobsTab";
 import InfoTab from "./components/InfoTab";
 import MembersTab from "./components/MembersTab";
 
-export default function OrganizationPage() {
+export default function Page() {
   const [current, setCurrent] = useState("info");
 
   return (
