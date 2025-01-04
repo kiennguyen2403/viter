@@ -192,7 +192,7 @@ const Lobby = () => {
     if (callingState !== CallingState.JOINED) {
       await call?.join();
     }
-    router.push(`/${meetingId}/meeting`);
+    router.push(`/video-call/${meetingId}/meeting`);
   };
 
   if (!validMeetingId)
@@ -212,8 +212,7 @@ const Lobby = () => {
 
   if (errorFetchingMeeting) {
     console.error("Error fetching meeting");
-    console.log(errorFetchingMeeting);
-    router.push(`/${meetingId}/meeting-end?invalid=true`);
+    router.push(`/video-call/${meetingId}/meeting-end?invalid=true`);
   }
 
   return (

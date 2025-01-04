@@ -76,24 +76,23 @@ Deno.serve(async (req) => {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
-        else {
-          const { data, error } = await supabase
-            .from("participants")
-            .select("*")
-            .eq("user_id", userData.id)
-            .order("created_at", { ascending: false });
+        const { data, error } = await supabase
+          .from("participants")
+          .select("*")
+          .eq("user_id", userData.id)
+          .order("created_at", { ascending: false });
 
-          if (error) {
-            return new Response(error.message, {
-              status: STATUS.INTERNAL_SERVER_ERROR,
-              headers: { ...corsHeaders, "Content-Type": "application/json" },
-            });
-          }
-          return new Response(JSON.stringify(data), {
-            status: STATUS.OK,
+        if (error) {
+          return new Response(error.message, {
+            status: STATUS.INTERNAL_SERVER_ERROR,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
+        return new Response(JSON.stringify(data), {
+          status: STATUS.OK,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+
       }
       case "POST": {
         const body = await req.json();

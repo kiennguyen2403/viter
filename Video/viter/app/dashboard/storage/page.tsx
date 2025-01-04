@@ -120,7 +120,7 @@ const Page = () => {
         !isLoading ? "animate-fade-in" : "opacity-0"
       )}
     >
-      <Header isSidebarOpen={true} />
+      <Header isSidebarOpen />
       {/* Main Content */}
       <div className="flex-1 p-4">
         <div className="w-full p-4 bg-white">

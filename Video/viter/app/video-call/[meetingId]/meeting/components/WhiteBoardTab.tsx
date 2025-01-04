@@ -1,26 +1,17 @@
-import { useEffect, useState, useRef } from "react";
-import Popup from "./Popup";
-import Spinner from "./Spinner";
+import Spinner from "@/components/Spinner";
+import { useEffect, useRef, useState } from "react";
 
-interface WhiteboardPopupProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onOpenChange?: (isOpen: boolean) => void;
-}
-
-const WhiteboardPopup = ({
-  isOpen,
-  onClose,
-  onOpenChange,
-}: WhiteboardPopupProps) => {
+export default function WhiteBoardTab() {
   const [identifier, setIdentifier] = useState<string | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [isFetching, setIsFetching] = useState<boolean>(false);
   const hasCreatedPaperRef = useRef(false);
   const hasRequestedAccessRef = useRef(false);
 
   useEffect(() => {
     const createPaper = async () => {
       try {
+        setIsFetching(true);
         hasCreatedPaperRef.current = true; // Set the ref to prevent further calls
         const response = await fetch("https://api.pixelpaper.io/api/paper", {
           method: "POST",
@@ -42,16 +33,16 @@ const WhiteboardPopup = ({
         }
       } catch (error) {
         console.error("Error creating paper:", error);
+      } finally {
+        hasCreatedPaperRef.current = true;
+        setIsFetching(false);
       }
     };
-    if (onOpenChange) {
-      onOpenChange(isOpen);
-    }
 
-    if (isOpen && !hasCreatedPaperRef.current) {
+    if (!hasCreatedPaperRef.current) {
       createPaper();
     }
-  }, [isOpen, onOpenChange]);
+  }, []);
 
   const requestAccessToken = async (identifier: string) => {
     try {
@@ -95,27 +86,18 @@ const WhiteboardPopup = ({
   };
 
   return (
-    <Popup
-      open={isOpen}
-      onClose={onClose}
-      title={<h2>Whiteboard</h2>}
-      className="bottom-[5rem] right-4 left-auto w-[26%] h-[calc(100svh-6rem)] animate-slideInRight"
-    >
-      <div className="px-4 pb-3 pt-0 h-[calc(100%-66px)]">
-        {identifier && accessToken ? (
-          <iframe
-            src={`https://app.pixelpaper.io/room/${identifier}?token=${accessToken}`}
-            className="h-full w-full"
-            allow="clipboard-read; clipboard-write"
-          ></iframe>
-        ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center">
-            <Spinner />
-          </div>
-        )}
-      </div>
-    </Popup>
+    <div className="h-full w-full flex items-center justify-center">
+      {!isFetching ? (
+        <iframe
+          src={`https://app.pixelpaper.io/room/${identifier}?token=${accessToken}`}
+          className="h-full w-full"
+          allow="clipboard-read; clipboard-write"
+        ></iframe>
+      ) : (
+        <div className="w-full h-full flex flex-col items-center justify-center">
+          <Spinner />
+        </div>
+      )}
+    </div>
   );
-};
-
-export default WhiteboardPopup;
+}
