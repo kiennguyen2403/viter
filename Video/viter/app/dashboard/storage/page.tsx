@@ -91,6 +91,7 @@ const Page = () => {
       await apiClient.post(`/functions/v1/resumes`, formData, {
         headers: {
           Authorization: `Bearer ${user?.accessToken}`,
+          "Content-Type": "multipart/form-data",
         },
       });
       setFiles((prev) => [
