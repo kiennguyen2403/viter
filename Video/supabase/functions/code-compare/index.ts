@@ -31,18 +31,6 @@ Deno.serve(async (req) => {
 
         const supabase = Supabase.getInstance(token);
 
-        const { error: userError } = await supabase.from("users")
-            .select("id")
-            .eq(
-                "token_identifier",
-                payload.sub,
-            ).single();
-        if (userError) {
-            return new Response(userError.message, {
-                status: STATUS.UNAUTHORIZED,
-            });
-        }
-
         switch (method) {
             case "POST": {
                 const { code, language, problemId } = await req.json();

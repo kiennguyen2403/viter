@@ -18,7 +18,6 @@ import CallEndFilled from "@/components/icons/CallEndFilled";
 import Chat from "@/components/icons/Chat";
 import ChatPopup from "@/components/ChatPopup";
 import InfoPopup from "@/components/InfoPopup";
-import WidgetPopup from "@/components/WidgetPopup";
 import GridLayout from "@/components/GridLayout";
 import SpeakerLayout from "@/components/SpeakerLayout";
 import Info from "@/components/icons/Info";
@@ -27,7 +26,16 @@ import MeetingPopup from "@/components/MeetingPopup";
 import ToggleAudioButton from "@/components/ToggleAudioButton";
 import ToggleVideoButton from "@/components/ToggleVideoButton";
 import useTime from "@/hooks/useTime";
-import Widget from "@/components/icons/widget";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
+import CodeEditorTab from "./components/CodeEditorTab";
+import WhiteBoardTab from "./components/WhiteBoardTab";
+import ProblemsTab from "./components/ProblemsTab";
+import NoteTab from "./components/NoteTab";
 
 interface MeetingProps {
   params: {
@@ -77,7 +85,7 @@ const Meeting = ({ params }: MeetingProps) => {
   useEffect(() => {
     const startup = async () => {
       if (isUnkownOrIdle) {
-        router.push(`/${meetingId}`);
+        router.push(`/video-call/${meetingId}`);
       } else if (chatClient && !chatChannel) {
         const channel = chatClient.channel("messaging", meetingId);
         setChatChannel(channel);
@@ -100,7 +108,7 @@ const Meeting = ({ params }: MeetingProps) => {
 
   const leaveCall = async () => {
     await call?.leave();
-    router.push(`/${meetingId}/meeting-end`);
+    router.push(`/video-call/${meetingId}/meeting-end`);
   };
 
   const toggleScreenShare = async () => {
@@ -125,8 +133,74 @@ const Meeting = ({ params }: MeetingProps) => {
           openPopup ? "layout-adjusted" : ""
         }`}
       >
-        {isSpeakerLayout && <SpeakerLayout />}
-        {!isSpeakerLayout && <GridLayout />}
+        <ResizablePanelGroup direction="horizontal">
+          <ResizablePanel defaultSize={25}>
+            {isSpeakerLayout && <SpeakerLayout />}
+            {!isSpeakerLayout && <GridLayout />}
+          </ResizablePanel>
+          <ResizableHandle withHandle />
+          <ResizablePanel defaultSize={75}>
+            <div className="h-svh text-center flex items-center justify-center bg-white">
+              <Tabs defaultValue="codeeditor" className="w-full h-full pt-4">
+                <TabsList className="grid w-full grid-cols-4">
+                  <TabsTrigger value="codeeditor">Code Editor</TabsTrigger>
+                  <TabsTrigger value="whiteboard">Whiteboard</TabsTrigger>
+                  <TabsTrigger value="problems">Problems</TabsTrigger>
+                  <TabsTrigger value="notes">Notes</TabsTrigger>
+                </TabsList>
+                <TabsContent value="codeeditor">
+                  <div
+                    className="w-full
+                  h-full
+                  text-center
+                  flex
+                  items-center
+                  justify-center"
+                  >
+                    <CodeEditorTab meetingId={meetingId} />
+                  </div>
+                </TabsContent>
+                <TabsContent value="whiteboard">
+                  <div
+                    className="w-full
+                  h-full
+                  text-center
+                  flex
+                  items-center
+                  justify-center"
+                  >
+                    <WhiteBoardTab />
+                  </div>
+                </TabsContent>
+                <TabsContent value="notes">
+                  <div
+                    className="w-full
+                  h-full
+                  text-center
+                  flex
+                  items-center
+                  justify-center"
+                  >
+                    <NoteTab />
+                  </div>
+                </TabsContent>
+                <TabsContent value="problems">
+                  <div
+                    className="w-full
+                  h-full
+                  text-center
+                  flex
+                  items-center
+                  justify-center
+                  p-4"
+                  >
+                    <ProblemsTab />
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
         <div className="absolute left-0 bottom-0 right-0 w-full h-20 bg-meet-black text-white text-center flex items-center justify-between">
           {/* Meeting ID */}
           <div className="hidden sm:flex grow shrink basis-1/4 items-center text-start justify-start ml-3 truncate max-w-full">
@@ -164,11 +238,6 @@ const Meeting = ({ params }: MeetingProps) => {
               icon={<Chat />}
               title="Chat with everyone"
             />
-            <CallInfoButton
-              onClick={() => togglePopup("widget")}
-              icon={<Widget />}
-              title="Tools and widgets"
-            />
           </div>
         </div>
         {/* Popups */}
@@ -180,13 +249,6 @@ const Meeting = ({ params }: MeetingProps) => {
             channel={chatChannel}
             isOpen={true}
             onClose={() => setOpenPopup(null)}
-          />
-        )}
-        {openPopup === "widget" && (
-          <WidgetPopup
-            isOpen={true}
-            onClose={() => setOpenPopup(null)}
-            meetingId={meetingId}
           />
         )}
         {isCreator && <MeetingPopup />}

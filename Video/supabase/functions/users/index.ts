@@ -6,216 +6,464 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { Supabase } from "../utils/supabase.ts";
 import { verifyToken } from "../utils/auth.ts";
-import { corsHeaders } from "../_shared/cors.ts";
+import { Application, Router } from "oak";
+import { oakCors } from "cors";
 
-Deno.serve(async (req) => {
-  try {
-    const method = req.method;
-    if (method === "OPTIONS") {
-      return new Response("ok", { headers: corsHeaders });
-    }
-    const authHeader = req.headers.get("Authorization")!;
+const router = new Router();
+router
+  .options("/users", (ctx) => {
+    ctx.response.headers.set("Access-Control-Allow-Origin", "*");
+    ctx.response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
+    ctx.response.headers.set("Access-Control-Allow-Headers", "Authorization, Content-Type");
+    ctx.response.status = 200;
+  })
+  .get("/users", async (ctx) => {
+    const authHeader = ctx.request.headers.get("Authorization")!;
     if (!authHeader) {
-      return new Response("Authorization header missing", { status: 401 });
+      ctx.response.status = 401;
+      ctx.response.body = "Authorization header missing";
+      return;
     }
     const token = authHeader.replace("Bearer ", "");
     const supabase = Supabase.getInstance(token);
     const payload = await verifyToken(token);
 
     if (!payload) {
-      return new Response("Unauthorized", { status: 401 });
+      ctx.response.status = 401;
+      ctx.response.body = "Unauthorized";
+      return;
     }
 
-    switch (method) {
-      case "GET": {
-        const { data: userData, error: userError } = await supabase
-          .from("users")
-          .select("*")
-          .eq(
-            "token_identifier",
-            payload.sub,
-          ).single();
+    const { data: userData, error: userError } = await supabase
+      .from("users")
+      .select("*")
+      .eq(
+        "token_identifier",
+        payload.sub,
+      ).single();
 
-        if (userError) {
-          return new Response(userError.message, {
-            status: 401,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
-        const id = req.url.split("/").pop();
-        if (id == "all") {
-          if (userData.role !== "ADMIN") {
-            return new Response("Unauthorized", {
-              status: 401,
-              headers: { ...corsHeaders, "Content-Type": "application/json" },
-            });
-          }
-          const { data, error } = await supabase
-            .from("users")
-            .select("*");
+    if (userError || userData.role !== "ADMIN") {
+      ctx.response.status = 401;
+      ctx.response.body = "Unauthorized";
+      return;
+    }
+    const { data, error } = await supabase
+      .from("users")
+      .select("*");
 
-          if (error) {
-            return new Response(error.message, {
-              status: 500,
-              headers: { ...corsHeaders, "Content-Type": "application/json" },
-            });
-          }
-          return new Response(JSON.stringify(data), {
-            status: 200,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        } else if (id == "me") {
-          if (userData.count === 0) {
-            return new Response("User not found", {
-              status: 404,
-              headers: { ...corsHeaders, "Content-Type": "application/json" },
-            });
-          }
-          return new Response(JSON.stringify(userData), {
-            status: 200,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        } else {
-          const { data, error } = await supabase
-            .from("users")
-            .select("*")
-            .eq("id", id);
+    if (error) {
+      ctx.response.status = 401;
+      ctx.response.body = error.message;
+      return;
+    }
 
-          if (error) {
-            return new Response(error.message, {
-              status: 500,
-              headers: { ...corsHeaders, "Content-Type": "application/json" },
-            });
-          }
-          return new Response(JSON.stringify(data), {
-            status: 200,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
-      }
-      case "POST": {
-        const { data: userData, error: userError } = await supabase
-          .from("users")
-          .select("*")
-          .eq(
-            "token_identifier",
-            payload.sub,
-          ).single();
-        if (userData) {
-          return new Response(JSON.stringify(userData), {
-            status: 200,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
-        const body = await req.json();
-        const { data, error } = await supabase.from("users")
-          .upsert({
-            ...body,
-            token_identifier: payload.sub,
-          })
-          .eq(
-            "token_identifier",
-            payload.sub,
-          );
-        if (error) {
-          return new Response(error.message, {
-            status: 500,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
-        return new Response(JSON.stringify(data), {
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      case "PUT": {
-        const { data: userData, error: userError } = await supabase
-          .from("users")
-          .select("*")
-          .eq(
-            "token_identifier",
-            payload.sub,
-          ).single();
+    ctx.response.status = 200;
+    ctx.response.body = data;
+    return;
+  })
+  .get("/users/:id", async (ctx) => {
+    const id = ctx.params.id;
+    const authHeader = ctx.request.headers.get("Authorization")!;
+    if (!authHeader) {
+      ctx.response.status = 401;
+      ctx.response.body = "Authorization header missing";
+      return;
+    }
+    const token = authHeader.replace("Bearer ", "");
+    const supabase = Supabase.getInstance(token);
+    const payload = await verifyToken(token);
 
-        if (userError) {
-          return new Response(userError.message, {
-            status: 401,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
-        const body = await req.json();
-        const { data, error } = await supabase
-          .from("users")
-          .upsert(body)
-          .eq(
-            "id",
-            userData.id,
-          );
-        if (error) {
-          return new Response(error.message, {
-            status: 500,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
-        return new Response(JSON.stringify(data), {
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      case "DELETE": {
-        const { data: userData, error: userError } = await supabase
-          .from("users")
-          .select("*")
-          .eq(
-            "token_identifier",
-            payload.sub,
-          ).single();
+    if (!payload) {
+      ctx.response.status = 401;
+      ctx.response.body = "Unauthorized";
+      return;
+    }
 
-        if (userError) {
-          return new Response(userError.message, {
-            status: 401,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
-        const { data, error } = await supabase
-          .from("users")
-          .delete()
-          .eq(
-            "id",
-            userData.id,
-          );
-        if (error) {
-          return new Response(error.message, {
-            status: 500,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
-        return new Response(JSON.stringify(data), {
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+    const { data: userData, error: userError } = await supabase
+      .from("users")
+      .select("*")
+      .eq(
+        "token_identifier",
+        payload.sub,
+      ).single();
+
+    if (userError) {
+      ctx.response.status = 401;
+      ctx.response.body = userError.message;
+      return;
+    }
+    switch (id) {
+      case "me": {
+        ctx.response.status = 200;
+        ctx.response.body = JSON.stringify(userData);
+        break;
       }
       default: {
-        return new Response("Method not allowed", {
-          status: 405,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        if (userData.role !== "ADMIN") {
+          ctx.response.status = 401;
+          ctx.response.body = "Unauthorized";
+          return;
+        }
+        const { data, error } = await supabase
+          .from("users")
+          .select("*")
+          .eq("id", id);
+
+        if (error) {
+          ctx.response.status = 500;
+          ctx.response.body = error.message;
+          return;
+        }
+
+        ctx.response.status = 200;
+        ctx.response.body = data;
+        break;
       }
     }
-  } catch (error) {
-    if (error instanceof Error) {
-      return new Response(error.message, {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    } else {
-      return new Response("An unknown error occurred", {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+  })
+  .get("/users/:id/applications", async (ctx) => {
+    const id = ctx.params.id;
+    const authHeader = ctx.request.headers.get("Authorization")!;
+    if (!authHeader) {
+      ctx.response.status = 401;
+      ctx.response.body = "Authorization header missing";
+      return;
     }
-  }
-});
+    const token = authHeader.replace("Bearer ", "");
+    const supabase = Supabase.getInstance(token);
+    const payload = await verifyToken(token);
+
+    if (!payload) {
+      ctx.response.status = 401;
+      ctx.response.body = "Unauthorized";
+      return;
+    }
+
+    const { data: userData, error: userError } = await supabase
+      .from("users")
+      .select("*")
+      .eq(
+        "token_identifier",
+        payload.sub,
+      ).single();
+
+    if (userError || userData.id !== id) {
+      ctx.response.status = 401;
+      ctx.response.body = userError.message;
+      return;
+    }
+    const { data, error } = await supabase
+      .from("applications")
+      .select("*")
+      .eq("user_id", id);
+
+    if (error) {
+      ctx.response.status = 500;
+      ctx.response.body = error.message;
+      return;
+    }
+    ctx.response.status = 200;
+    ctx.response.body = data;
+  })
+  .get("users/:id/participants", async (ctx) => {
+    const id = ctx.params.id;
+    const authHeader = ctx.request.headers.get("Authorization")!;
+    if (!authHeader) {
+      ctx.response.status = 401;
+      ctx.response.body = "Authorization header missing";
+      return;
+    }
+    const token = authHeader.replace("Bearer ", "");
+    const supabase = Supabase.getInstance(token);
+    const payload = await verifyToken(token);
+
+    if (!payload) {
+      ctx.response.status = 401;
+      ctx.response.body = "Unauthorized";
+      return;
+    }
+
+    const { data: userData, error: userError } = await supabase
+      .from("users")
+      .select("*")
+      .eq(
+        "token_identifier",
+        payload.sub,
+      ).single();
+
+    if (userError || userData.id !== id) {
+      ctx.response.status = 401;
+      ctx.response.body = userError.message;
+      return;
+    }
+    const { data, error } = await supabase
+      .from("participants")
+      .select("*")
+      .eq("user_id", id);
+
+    if (error) {
+      ctx.response.status = 500;
+      ctx.response.body = error.message;
+      return;
+    }
+    ctx.response.status = 200;
+    ctx.response.body = data;
+  })
+  .post("/users", async (ctx) => {
+    const authHeader = ctx.request.headers.get("Authorization")!;
+    if (!authHeader) {
+      ctx.response.status = 401;
+      ctx.response.body = "Authorization header missing";
+      return;
+    }
+    const token = authHeader.replace("Bearer ", "");
+    const supabase = Supabase.getInstance(token);
+    const payload = await verifyToken(token);
+
+    if (!payload) {
+      ctx.response.status = 401;
+      ctx.response.body = "Unauthorized";
+      return;
+    }
+
+    const { data: userData } = await supabase
+      .from("users")
+      .select("*")
+      .eq(
+        "token_identifier",
+        payload.sub,
+      ).single();
+
+    if (userData) {
+      ctx.response.status = 200;
+      ctx.response.body = JSON.stringify(userData);
+      return;
+    }
+    const body = await ctx.request.body.json();
+    const { data, error } = await supabase.from("users")
+      .upsert({
+        ...body.value,
+        token_identifier: payload.sub,
+      })
+      .eq(
+        "token_identifier",
+        payload.sub,
+      );
+    if (error) {
+      console.error(error);
+      ctx.response.status = 500;
+      ctx.response.body = error.message;
+      return;
+    }
+    ctx.response.status = 200;
+    ctx.response.body = JSON.stringify(data);
+  })
+  .put("/users", async (ctx) => {
+    const authHeader = ctx.request.headers.get("Authorization")!;
+    if (!authHeader) {
+      ctx.response.status = 401;
+      ctx.response.body = "Authorization header missing";
+      return;
+    }
+    const token = authHeader.replace("Bearer ", "");
+    const supabase = Supabase.getInstance(token);
+    const payload = await verifyToken(token);
+
+    if (!payload) {
+      ctx.response.status = 401;
+      ctx.response.body = "Unauthorized";
+      return;
+    }
+
+    const { data: userData } = await supabase
+      .from("users")
+      .select("*")
+      .eq(
+        "token_identifier",
+        payload.sub,
+      ).single();
+
+    if (userData) {
+      ctx.response.status = 200;
+      ctx.response.body = JSON.stringify(userData);
+      return;
+    }
+    const body = await ctx.request.body.json();
+    const { data, error } = await supabase
+      .from("users")
+      .upsert(body.value)
+      .eq(
+        "id",
+        userData.id,
+      );
+    if (error) {
+      ctx.response.status = 500;
+      ctx.response.body = error.message;
+      return;
+    }
+    ctx.response.status = 200;
+    ctx.response.body = JSON.stringify(data);
+  })
+  .put("/users/:id", async (ctx) => {
+    const id = ctx.params.id;
+    const authHeader = ctx.request.headers.get("Authorization")!;
+    if (!authHeader) {
+      ctx.response.status = 401;
+      ctx.response.body = "Authorization header missing";
+      return;
+    }
+    const token = authHeader.replace("Bearer ", "");
+    const supabase = Supabase.getInstance(token);
+    const payload = await verifyToken(token);
+
+    if (!payload) {
+      ctx.response.status = 401;
+      ctx.response.body = "Unauthorized";
+      return;
+    }
+
+    const { data: userData, error: userError } = await supabase
+      .from("users")
+      .select("*")
+      .eq(
+        "token_identifier",
+        payload.sub,
+      ).single();
+
+    if (userError) {
+      ctx.response.status = 401;
+      ctx.response.body = userError.message;
+      return;
+    }
+    if (userData.role !== "ADMIN") {
+      ctx.response.status = 401;
+      ctx.response.body = "Unauthorized";
+      return;
+    }
+    const body = await ctx.request.body.json();
+    const { data, error } = await supabase
+      .from("users")
+      .upsert(body.value)
+      .eq(
+        "id",
+        id,
+      );
+    if (error) {
+      ctx.response.status = 500;
+      ctx.response.body = error.message;
+      return;
+    }
+    ctx.response.status = 200;
+    ctx.response.body = JSON.stringify(data);
+  })
+  .delete("/users", async (ctx) => {
+    const authHeader = ctx.request.headers.get("Authorization")!;
+    if (!authHeader) {
+      ctx.response.status = 401;
+      ctx.response.body = "Authorization header missing";
+      return;
+    }
+    const token = authHeader.replace("Bearer ", "");
+    const supabase = Supabase.getInstance(token);
+    const payload = await verifyToken(token);
+
+    if (!payload) {
+      ctx.response.status = 401;
+      ctx.response.body = "Unauthorized";
+      return;
+    }
+
+    const { data: userData } = await supabase
+      .from("users")
+      .select("*")
+      .eq(
+        "token_identifier",
+        payload.sub,
+      ).single();
+
+    if (userData) {
+      ctx.response.status = 200;
+      ctx.response.body = JSON.stringify(userData);
+      return;
+    }
+    const { data, error } = await supabase
+      .from("users")
+      .delete()
+      .eq(
+        "id",
+        userData.id,
+      );
+    if (error) {
+      ctx.response.status = 500;
+      ctx.response.body = error.message;
+      return;
+    }
+    ctx.response.status = 200;
+    ctx.response.body = JSON.stringify(data);
+  }).
+  delete("/users/:id", async (ctx) => {
+    const id = ctx.params.id;
+    const authHeader = ctx.request.headers.get("Authorization")!;
+    if (!authHeader) {
+      ctx.response.status = 401;
+      ctx.response.body = "Authorization header missing";
+      return;
+    }
+    const token = authHeader.replace("Bearer ", "");
+    const supabase = Supabase.getInstance(token);
+    const payload = await verifyToken(token);
+
+    if (!payload) {
+      ctx.response.status = 401;
+      ctx.response.body = "Unauthorized";
+      return;
+    }
+
+    const { data: userData, error: userError } = await supabase
+      .from("users")
+      .select("*")
+      .eq(
+        "token_identifier",
+        payload.sub,
+      ).single();
+
+    if (userError) {
+      ctx.response.status = 401;
+      ctx.response.body = userError.message;
+      return;
+    }
+    if (userData.role !== "ADMIN") {
+      ctx.response.status = 401;
+      ctx.response.body = "Unauthorized";
+      return;
+    }
+    const { data, error } = await supabase
+      .from("users")
+      .delete()
+      .eq(
+        "id",
+        id,
+      );
+    if (error) {
+      ctx.response.status = 500;
+      ctx.response.body = error.message;
+      return;
+    }
+    ctx.response.status = 200;
+    ctx.response.body = JSON.stringify(data);
+  })
+
+const app = new Application()
+app.use(oakCors({
+  origin: "*",
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Authorization", "Content-Type", "Accept"],
+
+}))
+app.use(router.routes())
+app.use(router.allowedMethods())
+
+await app.listen({ port: 8000 })
 
 /* To invoke locally:
 

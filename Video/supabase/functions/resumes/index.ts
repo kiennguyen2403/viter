@@ -19,6 +19,10 @@ Deno.serve(async (req) => {
     if (!authHeader) {
       return new Response("Authorization header missing", {
         status: STATUS.UNAUTHORIZED,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+        }
       });
     }
 
@@ -27,7 +31,13 @@ Deno.serve(async (req) => {
     const payload = await verifyToken(token);
 
     if (!payload) {
-      return new Response("Unauthorized", { status: STATUS.UNAUTHORIZED });
+      return new Response("Unauthorized", {
+        status: STATUS.UNAUTHORIZED,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+        }
+      });
     }
 
     const { data: user, error: userError }: {
@@ -44,7 +54,13 @@ Deno.serve(async (req) => {
     }
 
     if (userError) {
-      return new Response(userError.message, { status: STATUS.UNAUTHORIZED });
+      return new Response(userError.message, {
+        status: STATUS.UNAUTHORIZED,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+        }
+      });
     }
 
     switch (method) {
@@ -60,6 +76,10 @@ Deno.serve(async (req) => {
         if (resumeError) {
           return new Response(resumeError.message, {
             status: STATUS.INTERNAL_SERVER_ERROR,
+            headers: {
+              ...corsHeaders,
+              "Content-Type": "application/json",
+            }
           });
         }
 
@@ -94,7 +114,7 @@ Deno.serve(async (req) => {
 
         return new Response(JSON.stringify(resumes), {
           status: STATUS.OK,
-          headers: { "Content-Type": "application/json" },
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
@@ -105,6 +125,10 @@ Deno.serve(async (req) => {
           if (!file) {
             return new Response("File missing in request", {
               status: STATUS.BAD_REQUEST,
+              headers: {
+                ...corsHeaders,
+                "Content-Type": "application/json",
+              }
             });
           }
 
@@ -116,9 +140,11 @@ Deno.serve(async (req) => {
 
           if (error) {
             return new Response(JSON.stringify(error), {
-              // deno-lint-ignore no-explicit-any
-              status: (error as any).statusCode,
-              headers: { "Content-Type": "application/json" },
+              status: STATUS.BAD_REQUEST,
+              headers: {
+                ...corsHeaders,
+                "Content-Type": "application/json",
+              }
             });
           }
 
@@ -133,14 +159,28 @@ Deno.serve(async (req) => {
 
             return new Response(recordingError.message, {
               status: STATUS.INTERNAL_SERVER_ERROR,
+              headers: {
+                ...corsHeaders,
+                "Content-Type": "application/json",
+              }
             });
           }
 
-          return new Response(null, { status: STATUS.CREATED });
+          return new Response(null, {
+            status: STATUS.CREATED,
+            headers: {
+              ...corsHeaders,
+              "Content-Type": "application/json",
+            }
+          });
         } catch (uploadError) {
           console.error("Error in file upload:", uploadError);
           return new Response("Error in file upload", {
             status: STATUS.INTERNAL_SERVER_ERROR,
+            headers: {
+              ...corsHeaders,
+              "Content-Type": "application/json",
+            }
           });
         }
       }
@@ -148,6 +188,10 @@ Deno.serve(async (req) => {
       default:
         return new Response("Method not allowed", {
           status: STATUS.METHOD_NOT_ALLOWED,
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json",
+          }
         });
     }
   } catch (error) {
@@ -155,6 +199,10 @@ Deno.serve(async (req) => {
       error instanceof Error ? error.message : "An unknown error occurred",
       {
         status: STATUS.INTERNAL_SERVER_ERROR,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+        }
       },
     );
   }

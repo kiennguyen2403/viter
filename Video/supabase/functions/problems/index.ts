@@ -6,9 +6,8 @@
 import { Supabase } from "../utils/supabase.ts";
 import { STATUS } from "../type/type.ts";
 import { corsHeaders } from "../_shared/cors.ts";
-import pdf from 'pdf-parse'
 import OpenAI from "openai";
-import { multiParser, FormFile } from 'https://deno.land/x/multiparser@0.114.0/mod.ts'
+
 
 Deno.serve(async (req) => {
   try {

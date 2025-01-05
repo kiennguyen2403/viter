@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
 
 
     const { data, error } = await supabase.rpc("match_problems", { 
-      query_embedding: embeddings,
+      query_embedding: JSON.stringify(embeddings),
       match_threshold: 0.5,
       match_count: 5,
     });

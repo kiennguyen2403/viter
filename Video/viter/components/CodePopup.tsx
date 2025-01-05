@@ -40,6 +40,16 @@ interface ExecuteResponse {
   output: string;
 }
 
+const LANGUAGE_MAP: { [key: string]: string } = {
+  "TypeScript": "node",
+  "Python": "python",
+  "C++": "c++",
+  "Java": "java",
+  "Go": "go",
+  "Ruby": "ruby",
+  "Bash": "bash"
+};
+
 const CodePopup = ({
   isOpen,
   onClose,
@@ -152,12 +162,30 @@ const CodePopup = ({
   const handleCodeRun = async () => {
     setLoading(true);
     try {
+      const mappedLanguage = LANGUAGE_MAP[language] || language.toLowerCase();
+      console.log('Sending request with:', {
+        code,
+        language: mappedLanguage
+      });
+      
       const response = await axios.post<ExecuteResponse>(
         "http://localhost:8000/execute",
-        { code, language: language.toLowerCase() },
-        { headers: { Authorization: `Bearer ${user?.accessToken || ""}` } }
+        {
+          code: code,
+          language: mappedLanguage
+        },
+        { 
+          headers: { 
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${user?.accessToken || ""}`
+          },
+          timeout: 30000 // Add 30 second timeout
+        }
       );
+      
+      console.log('Received response:', response.data);
       setResult(response.data);
+      
       if (channel.current) {
         await channel.current.send({
           type: "broadcast",
@@ -166,8 +194,13 @@ const CodePopup = ({
         });
       }
       setCurrentTab("testresult");
-    } catch {
-      handleError("Error running code. Please check your input or try again.");
+    } catch (error: any) {
+      console.error('Error details:', error);
+      handleError(
+        error.response?.data?.message || 
+        error.message ||
+        "Error running code. Please check your input or try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -189,10 +222,13 @@ const CodePopup = ({
               <SelectValue placeholder={language} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="Node">TypeScript</SelectItem>
+              <SelectItem value="TypeScript">TypeScript</SelectItem>
               <SelectItem value="Python">Python</SelectItem>
               <SelectItem value="C++">C++</SelectItem>
               <SelectItem value="Java">Java</SelectItem>
+              <SelectItem value="Go">Go</SelectItem>
+              <SelectItem value="Ruby">Ruby</SelectItem>
+              <SelectItem value="Bash">Bash</SelectItem>
             </SelectContent>
           </Select>
           <Button onClick={handleCodeRun} disabled={loading}>
@@ -276,3 +312,4 @@ const CodePopup = ({
 };
 
 export default CodePopup;
+

@@ -96,7 +96,7 @@ const Page = () => {
           !isLoading ? "animate-fade-in" : "opacity-0"
         )}
       >
-        <Header isSidebarOpen={true} />
+        <Header isSidebarOpen />
         <div className="flex flex-col items-center justify-center bg-white w-full h-screen">
           <h1 className="text-3xl font-bold text-gray-800">Your Results</h1>
           <p className="text-lg text-gray-600 mt-2">
@@ -170,7 +170,7 @@ const Page = () => {
           !isLoading ? "animate-fade-in" : "opacity-0"
         )}
       >
-        <Header isSidebarOpen={true} />
+        <Header isSidebarOpen />
         <div className="flex flex-col items-center justify-center bg-white w-full h-screen">
           <h1 className="text-3xl font-bold text-gray-800">Admin Dashboard</h1>
           <p className="text-lg text-gray-600 mt-2">

@@ -1,4 +1,3 @@
-
 export type Json =
   | string
   | number
@@ -10,6 +9,41 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      applications: {
+        Row: {
+          created_at: string
+          id: number
+          job_position_id: number | null
+          name: string | null
+          status: Database["public"]["Enums"]["application_status"] | null
+          url: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          job_position_id?: number | null
+          name?: string | null
+          status?: Database["public"]["Enums"]["application_status"] | null
+          url?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          job_position_id?: number | null
+          name?: string | null
+          status?: Database["public"]["Enums"]["application_status"] | null
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "applications_job_position_id_fkey"
+            columns: ["job_position_id"]
+            isOneToOne: false
+            referencedRelation: "job_positions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chats: {
         Row: {
           content: string | null
@@ -76,26 +110,76 @@ export type Database = {
         }
         Relationships: []
       }
-      "leetcode-questions": {
+      job_positions: {
         Row: {
-          answers: string | null
+          company_id: number | null
           created_at: string
+          description: string | null
           id: number
-          question: string | null
+          title: string | null
         }
         Insert: {
-          answers?: string | null
+          company_id?: number | null
           created_at?: string
+          description?: string | null
           id?: number
-          question?: string | null
+          title?: string | null
         }
         Update: {
-          answers?: string | null
+          company_id?: number | null
+          created_at?: string
+          description?: string | null
+          id?: number
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_positions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meeting_activities: {
+        Row: {
+          created_at: string
+          id: number
+          meeting_id: string | null
+          payload: Json | null
+          user_id: number | null
+        }
+        Insert: {
           created_at?: string
           id?: number
-          question?: string | null
+          meeting_id?: string | null
+          payload?: Json | null
+          user_id?: number | null
         }
-        Relationships: []
+        Update: {
+          created_at?: string
+          id?: number
+          meeting_id?: string | null
+          payload?: Json | null
+          user_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_activities_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_activities_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       meetings: {
         Row: {
@@ -194,73 +278,71 @@ export type Database = {
       participants: {
         Row: {
           created_at: string
-          id: number
-          meetingId: string | null
+          meeting_id: string
           status: Database["public"]["Enums"]["participate"] | null
-          userId: number | null
+          user_id: number
         }
         Insert: {
           created_at?: string
-          id?: number
-          meetingId?: string | null
+          meeting_id: string
           status?: Database["public"]["Enums"]["participate"] | null
-          userId?: number | null
+          user_id: number
         }
         Update: {
           created_at?: string
-          id?: number
-          meetingId?: string | null
+          meeting_id?: string
           status?: Database["public"]["Enums"]["participate"] | null
-          userId?: number | null
+          user_id?: number
         }
         Relationships: [
           {
-            foreignKeyName: "participant_meetingId_fkey"
-            columns: ["meetingId"]
+            foreignKeyName: "participants_meeting_id_fkey"
+            columns: ["meeting_id"]
             isOneToOne: false
             referencedRelation: "meetings"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "participant_userId_fkey"
-            columns: ["userId"]
+            foreignKeyName: "participants_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
       }
-      recordings: {
+      problems: {
         Row: {
-          bucket: string | null
+          answers: string | null
           created_at: string
+          difficulty: Database["public"]["Enums"]["difficulty"] | null
+          embedding: string | null
           id: number
-          meeting_id: string | null
-          name: string | null
+          question: string | null
+          title: string | null
+          type: Database["public"]["Enums"]["problem_type"] | null
         }
         Insert: {
-          bucket?: string | null
+          answers?: string | null
           created_at?: string
+          difficulty?: Database["public"]["Enums"]["difficulty"] | null
+          embedding?: string | null
           id?: number
-          meeting_id?: string | null
-          name?: string | null
+          question?: string | null
+          title?: string | null
+          type?: Database["public"]["Enums"]["problem_type"] | null
         }
         Update: {
-          bucket?: string | null
+          answers?: string | null
           created_at?: string
+          difficulty?: Database["public"]["Enums"]["difficulty"] | null
+          embedding?: string | null
           id?: number
-          meeting_id?: string | null
-          name?: string | null
+          question?: string | null
+          title?: string | null
+          type?: Database["public"]["Enums"]["problem_type"] | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "recording_meetingId_fkey"
-            columns: ["meeting_id"]
-            isOneToOne: false
-            referencedRelation: "meetings"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       resumes: {
         Row: {
@@ -337,12 +419,216 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      binary_quantize:
+        | {
+            Args: {
+              "": string
+            }
+            Returns: unknown
+          }
+        | {
+            Args: {
+              "": unknown
+            }
+            Returns: unknown
+          }
       check_and_send_email: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      halfvec_avg: {
+        Args: {
+          "": number[]
+        }
+        Returns: unknown
+      }
+      halfvec_out: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      halfvec_send: {
+        Args: {
+          "": unknown
+        }
+        Returns: string
+      }
+      halfvec_typmod_in: {
+        Args: {
+          "": unknown[]
+        }
+        Returns: number
+      }
+      hnsw_bit_support: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      hnsw_halfvec_support: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      hnsw_sparsevec_support: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      hnswhandler: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      ivfflat_bit_support: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      ivfflat_halfvec_support: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      ivfflathandler: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      l2_norm:
+        | {
+            Args: {
+              "": unknown
+            }
+            Returns: number
+          }
+        | {
+            Args: {
+              "": unknown
+            }
+            Returns: number
+          }
+      l2_normalize:
+        | {
+            Args: {
+              "": string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              "": unknown
+            }
+            Returns: unknown
+          }
+        | {
+            Args: {
+              "": unknown
+            }
+            Returns: unknown
+          }
+      match_documents: {
+        Args: {
+          query_embedding: string
+          match_count?: number
+          filter?: Json
+        }
+        Returns: {
+          id: number
+          content: string
+          metadata: Json
+          similarity: number
+        }[]
+      }
+      match_problems: {
+        Args: {
+          query_embedding: string
+          match_threshold: number
+          match_count: number
+        }
+        Returns: {
+          answers: string | null
+          created_at: string
+          difficulty: Database["public"]["Enums"]["difficulty"] | null
+          embedding: string | null
+          id: number
+          question: string | null
+          title: string | null
+          type: Database["public"]["Enums"]["problem_type"] | null
+        }[]
+      }
+      sparsevec_out: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      sparsevec_send: {
+        Args: {
+          "": unknown
+        }
+        Returns: string
+      }
+      sparsevec_typmod_in: {
+        Args: {
+          "": unknown[]
+        }
+        Returns: number
+      }
+      vector_avg: {
+        Args: {
+          "": number[]
+        }
+        Returns: string
+      }
+      vector_dims:
+        | {
+            Args: {
+              "": string
+            }
+            Returns: number
+          }
+        | {
+            Args: {
+              "": unknown
+            }
+            Returns: number
+          }
+      vector_norm: {
+        Args: {
+          "": string
+        }
+        Returns: number
+      }
+      vector_out: {
+        Args: {
+          "": string
+        }
+        Returns: unknown
+      }
+      vector_send: {
+        Args: {
+          "": string
+        }
+        Returns: string
+      }
+      vector_typmod_in: {
+        Args: {
+          "": unknown[]
+        }
+        Returns: number
+      }
     }
     Enums: {
+      application_status: "SUBMIT" | "IN_PROGRESS" | "REJECT" | "SUCCESS"
+      difficulty: "EASY" | "MEDIUM" | "HARD"
       file_type: "TEXT" | "AUDIO" | "IMAGE" | "VIDEO"
       meeting_status: "IDLE" | "LIVE" | "END"
       participant_role: "INTERVIEWER" | "INTERVIEWEE"
@@ -354,6 +640,7 @@ export type Database = {
         | "LIVE"
         | "LEAVE"
       privacy: "PRIVATE" | "TEAM" | "PUBLIC"
+      problem_type: "LEETCODE" | "TECHNICAL" | "BEHAVIOUR"
       role: "USER" | "EMPLOYER" | "EMPLOYEE" | "ADMIN"
     }
     CompositeTypes: {

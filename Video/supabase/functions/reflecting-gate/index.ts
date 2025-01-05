@@ -4,7 +4,7 @@
 
 // Setup type definitions for built-in Supabase Runtime APIs
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
-import { multiParser, FormFile } from 'https://deno.land/x/multiparser@0.114.0/mod.ts'
+import { multiParser } from 'https://deno.land/x/multiparser@0.114.0/mod.ts'
 import pdf from "pdf-parse"
 
 

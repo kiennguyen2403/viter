@@ -36,21 +36,14 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-
+    const id = req.url.split("/").pop();
+    if (!id) return new Response("Missing id", { status: STATUS.BAD_REQUEST });
     switch (method) {
       case "GET": {
-        const meetingId = req.url.split("/").pop();
-
-        if (!meetingId) {
-          return new Response("Meeting ID is required", {
-            status: STATUS.BAD_REQUEST,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
         const { data, error } = await supabase
           .from("notes")
           .select("*")
-          .eq("meeting_id", meetingId);
+          .eq("id", id);
         if (error) {
           return new Response(error.message, {
             status: STATUS.INTERNAL_SERVER_ERROR,
@@ -62,14 +55,11 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      case "POST": {
-        const body = await req.json();
-        const { data, error } = await supabase.from("notes").insert([
-          {
-            ...body,
-            user_id: payload.sub,
-          },
-        ]);
+      case "PUT": {
+        const { data, error } = await supabase
+          .from("notes")
+          .update(req.body)
+          .eq("id", id);
         if (error) {
           return new Response(error.message, {
             status: STATUS.INTERNAL_SERVER_ERROR,
@@ -77,7 +67,23 @@ Deno.serve(async (req) => {
           });
         }
         return new Response(JSON.stringify(data), {
-          status: STATUS.CREATED,
+          status: STATUS.OK,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      case "DELETE": {
+        const { error } = await supabase
+          .from("notes")
+          .delete()
+          .eq("id", id);
+        if (error) {
+          return new Response(error.message, {
+            status: STATUS.INTERNAL_SERVER_ERROR,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        return new Response("Note deleted", {
+          status: STATUS.OK,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
