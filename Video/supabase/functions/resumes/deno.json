@@ -1,0 +1,5 @@
+{
+  "imports": {
+    "@supabase/storage-js": "npm:@supabase/storage-js@^2.7.1"
+  }
+}

@@ -55,7 +55,6 @@ export const GET = handleAuth({
             const session = await handleCallback(req, res, { afterCallback });
             return session;
         } catch (error) {
-            console.error(error);
             if (error instanceof Error) {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 res.status((error as any).status || 500).end(error.message);

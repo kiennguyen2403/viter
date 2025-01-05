@@ -3,6 +3,8 @@ import { Supabase } from "../utils/supabase.ts";
 import { verifyToken } from "../utils/auth.ts";
 import { STATUS } from "../type/type.ts";
 import { corsHeaders } from "../_shared/cors.ts";
+import { Tables } from "../type/database.types.ts";
+import { FileObject } from "@supabase/storage-js";
 
 Deno.serve(async (req) => {
   try {
@@ -11,7 +13,7 @@ Deno.serve(async (req) => {
     if (method === "OPTIONS") {
       return new Response("ok", { headers: corsHeaders });
     }
-    
+
     const authHeader = req.headers.get("Authorization");
 
     if (!authHeader) {
@@ -28,11 +30,18 @@ Deno.serve(async (req) => {
       return new Response("Unauthorized", { status: STATUS.UNAUTHORIZED });
     }
 
-    const { data: user, error: userError } = await supabase
+    const { data: user, error: userError }: {
+      data: Tables<"users"> | null;
+      error: Error | null;
+    } = await supabase
       .from("users")
       .select("*")
       .eq("token_identifier", payload.sub)
       .single();
+
+    if (!user) {
+      return new Response("User doesn't exist.", { status: STATUS.NOT_FOUND });
+    }
 
     if (userError) {
       return new Response(userError.message, { status: STATUS.UNAUTHORIZED });
@@ -40,10 +49,13 @@ Deno.serve(async (req) => {
 
     switch (method) {
       case "GET": {
-        const { data: resume, error: resumeError } = await supabase
+        const { data: resumes, error: resumeError }: {
+          data: Tables<"resumes">[] | null;
+          error: Error | null;
+        } = await supabase
           .from("resumes")
           .select("*")
-          .eq("user_id", user.id);
+          .eq("user_id", user!.id);
 
         if (resumeError) {
           return new Response(resumeError.message, {
@@ -52,32 +64,35 @@ Deno.serve(async (req) => {
         }
 
         await Promise.all(
-          resume.map(
+          resumes!.map(
             async (
-              r: { fileName: any; signedUrlError: any; signedUrl: any },
+              resume,
             ) => {
               try {
                 const { data, error } = await supabase.storage
                   .from("storages")
-                  .createSignedUrl(r.fileName, 60);
+                  .createSignedUrl(resume.fileName as string, 60);
 
                 if (error) {
                   console.error(
-                    `Error creating signed URL for ${r.fileName}:`,
+                    `Error creating signed URL for ${resume
+                      .fileName as string}:`,
                     error.message,
                   );
-                  r.signedUrlError = error.message;
                 } else {
-                  r.signedUrl = data?.signedUrl;
+                  resume.url = data.signedUrl;
                 }
               } catch (err) {
-                console.error(`Unexpected error for ${r.fileName}:`, err);
+                console.error(
+                  `Unexpected error for ${resume.fileName as string}:`,
+                  err,
+                );
               }
             },
           ),
         );
 
-        return new Response(JSON.stringify(resume), {
+        return new Response(JSON.stringify(resumes), {
           status: STATUS.OK,
           headers: { "Content-Type": "application/json" },
         });
@@ -86,7 +101,7 @@ Deno.serve(async (req) => {
       case "POST": {
         try {
           const formData = await req.formData();
-          const file = formData.get("file") as File | null;
+          const file = formData.get("file") as File;
           if (!file) {
             return new Response("File missing in request", {
               status: STATUS.BAD_REQUEST,
@@ -94,22 +109,28 @@ Deno.serve(async (req) => {
           }
 
           const fileName = file.name.split("\\").pop()!;
-          const { data, error } = await supabase.storage
-            .from("storages")
-            .upload(fileName, file);
+          const { data, error }: { data: FileObject; error: Error | null } =
+            await supabase.storage
+              .from("storages")
+              .upload(fileName, file);
 
           if (error) {
             return new Response(JSON.stringify(error), {
-              status: STATUS.BAD_REQUEST,
+              // deno-lint-ignore no-explicit-any
+              status: (error as any).statusCode,
               headers: { "Content-Type": "application/json" },
             });
           }
 
           const { error: recordingError } = await supabase
             .from("resumes")
-            .insert([{ userId: user.id, bucket: data.id, fileName }]);
+            .insert([{ user_id: user!.id, bucket: data.id, fileName }]);
 
           if (recordingError) {
+            supabase.storage
+              .from("storages")
+              .remove([fileName]);
+
             return new Response(recordingError.message, {
               status: STATUS.INTERNAL_SERVER_ERROR,
             });
