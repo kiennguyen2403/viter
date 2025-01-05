@@ -41,6 +41,7 @@ export default function CodeEditorTab({ meetingId }: { meetingId: string }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentTab, setCurrentTab] = useState("testcase");
+  const [isCopied, setIsCopied] = useState(false);
   const channel = useRef<RealtimeChannel | null>(null);
   const { user } = useUser();
 
@@ -214,13 +215,17 @@ export default function CodeEditorTab({ meetingId }: { meetingId: string }) {
                   Testcase Input
                 </span>
                 <Button
-                  onClick={() =>
-                    navigator.clipboard.writeText(
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(
                       problem?.testcases[currentTestcase]?.input || ""
-                    )
-                  }
+                    );
+                    setIsCopied(true);
+                    setTimeout(() => {
+                      setIsCopied(false);
+                    }, 2000);
+                  }}
                 >
-                  Copy
+                  {isCopied ? "Copied!" : "Copy"}
                 </Button>
               </div>
               <pre className="overflow-x-auto font-mono text-sm whitespace-pre-wrap break-words bg-neutral-800 rounded-md p-3">

@@ -6,7 +6,7 @@ const useAxiosInterceptor = () => {
 
     const apiClient = axios.create({
         baseURL: process.env.NEXT_PUBLIC_SUPABASE_URL,
-        timeout: 5000,
+        timeout: 20000,
         headers: {
             "Content-Type": "application/json",
         },
@@ -27,8 +27,9 @@ const useAxiosInterceptor = () => {
     apiClient.interceptors.response.use(
         (response) => response,
         (error) => {
+            console.error("Error response", error.response);
             // Handle errors globally, e.g., refresh token or redirect on 401
-            switch (error.response.status) {
+            switch (error?.response?.status) {
                 case 401:
                     // Redirect to login page
                     break;

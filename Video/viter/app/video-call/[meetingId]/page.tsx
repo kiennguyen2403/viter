@@ -129,6 +129,7 @@ const Lobby = () => {
       }
     }
   }, [
+    apiClient,
     call,
     callingState,
     connectedUser,
@@ -187,6 +188,13 @@ const Lobby = () => {
         },
         tokenProvider
       );
+      await chatClient.partialUpdateUser({
+        id: GUEST_ID,
+        set: {
+          role: "channel_member",
+
+        },
+      });
     } catch (error) {
       console.error(error);
     }
@@ -196,6 +204,8 @@ const Lobby = () => {
     setJoining(true);
     if (isGuest) {
       await updateGuestName();
+    }
+    else {
     }
     if (callingState !== CallingState.JOINED) {
       await call?.join();

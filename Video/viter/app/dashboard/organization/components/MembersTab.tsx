@@ -56,7 +56,7 @@ export default function MembersTab() {
       }
     };
     fetchMembers();
-  }, [apiClient, user]);
+  }, [user]);
 
   const handleOnClick = async () => {
     setIsOpened(true);

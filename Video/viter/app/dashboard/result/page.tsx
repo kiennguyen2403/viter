@@ -274,7 +274,7 @@ const Page = () => {
     };
 
     fetchParticipants();
-  }, [apiClient, user?.accessToken]);
+  }, [user?.accessToken]);
 
   // JSX
 

@@ -57,14 +57,11 @@ const Page = () => {
       setIsFileLoading(true);
       setError(null); // Reset error state
       try {
-        const response = await apiClient.get(
-          `/functions/v1/resumes`,
-          {
-            headers: {
-              Authorization: `Bearer ${user?.accessToken}`,
-            },
-          }
-        );
+        const response = await apiClient.get(`/functions/v1/resumes`, {
+          headers: {
+            Authorization: `Bearer ${user?.accessToken}`,
+          },
+        });
         setFiles(response.data);
       } catch (error) {
         console.error("Error fetching files", error);
@@ -74,7 +71,7 @@ const Page = () => {
       }
     };
     fetchFiles();
-  }, [apiClient, user?.accessToken]);
+  }, [user?.accessToken]);
 
   const handleUpload = async () => {
     if (!user?.accessToken) return;
@@ -91,15 +88,11 @@ const Page = () => {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      await apiClient.post(
-        `/functions/v1/resumes`,
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${user?.accessToken}`,
-          },
-        }
-      );
+      await apiClient.post(`/functions/v1/resumes`, formData, {
+        headers: {
+          Authorization: `Bearer ${user?.accessToken}`,
+        },
+      });
       setFiles((prev) => [
         ...prev,
         { id: file.name, fileName: file.name.split("\\").pop()! },

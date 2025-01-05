@@ -71,14 +71,11 @@ const Page = () => {
       if (!user) return;
       try {
         setIsFetching(true);
-        const response = await apiClient.get(
-          `/functions/v1/users/me`,
-          {
-            headers: {
-              Authorization: `Bearer ${user.accessToken}`,
-            },
-          }
-        );
+        const response = await apiClient.get(`/functions/v1/users/me`, {
+          headers: {
+            Authorization: `Bearer ${user.accessToken}`,
+          },
+        });
         setRole(response.data.role);
       } catch (error) {
         console.error("Error fetching data: ", error);
@@ -87,7 +84,7 @@ const Page = () => {
       }
     };
     fetchData();
-  }, [apiClient, user]);
+  }, [user]);
 
   if (role !== "USER") {
     return (

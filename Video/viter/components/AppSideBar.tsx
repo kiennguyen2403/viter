@@ -20,6 +20,7 @@ import Organization from "./icons/Organization";
 import { useEffect, useState, useMemo } from "react";
 import Spinner from "./Spinner";
 import useAxiosInterceptor from "@/utils/http-interceptor";
+import Feedback from "./icons/Feedback";
 
 // Initial menu items.
 const initialItems = [
@@ -28,6 +29,7 @@ const initialItems = [
   { title: "Calendar", url: "/dashboard", icon: Calendar },
   { title: "Storage", url: "/dashboard/storage", icon: Archive },
   { title: "Result", url: "/dashboard/result", icon: Megaphone },
+  { title: "Resume Marking", url: "/dashboard/marking", icon: Feedback },
 ];
 
 export function AppSidebar() {
@@ -43,12 +45,9 @@ export function AppSidebar() {
 
       try {
         setIsFetching(true);
-        const response = await apiClient.get(
-          `/functions/v1/users/me`,
-          {
-            headers: { Authorization: `Bearer ${user.accessToken}` },
-          }
-        );
+        const response = await apiClient.get(`/functions/v1/users/me`, {
+          headers: { Authorization: `Bearer ${user.accessToken}` },
+        });
 
         if (!response.data.company_id) {
           setMenuItems((prevItems) =>

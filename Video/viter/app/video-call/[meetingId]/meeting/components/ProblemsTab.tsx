@@ -118,7 +118,7 @@ export default function ProblemsTab() {
   return (
     <div className="flex flex-col w-full h-full items-start justify-between">
       <Tabs defaultValue="all" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid grid-cols-2 w-[300px]">
           <TabsTrigger value="all">Search</TabsTrigger>
           <TabsTrigger value="recommend">AI Recommend</TabsTrigger>
         </TabsList>

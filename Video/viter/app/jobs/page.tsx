@@ -26,14 +26,11 @@ export default function DetailedJobPage() {
 
       setIsFetching(true);
       try {
-        const response = await apiClient.get(
-          `/functions/v1/jobs`,
-          {
-            headers: {
-              Authorization: `Bearer ${user.accessToken}`,
-            },
-          }
-        );
+        const response = await apiClient.get(`/functions/v1/jobs`, {
+          headers: {
+            Authorization: `Bearer ${user.accessToken}`,
+          },
+        });
         setJobs(response.data);
       } catch (error) {
         console.error("Error fetching jobs:", error);
@@ -43,7 +40,7 @@ export default function DetailedJobPage() {
     };
 
     fetchJobs();
-  }, [apiClient, user]);
+  }, [user]);
 
   // Render the job cards
   const renderJobs = () =>

@@ -38,14 +38,11 @@ export default function JobsTab() {
       try {
         if (!user) return;
         setIsFetching(true);
-        const response = await apiClient.get(
-          `/functions/v1/jobs`,
-          {
-            headers: {
-              Authorization: `Bearer ${user.accessToken}`,
-            },
-          }
-        );
+        const response = await apiClient.get(`/functions/v1/jobs`, {
+          headers: {
+            Authorization: `Bearer ${user.accessToken}`,
+          },
+        });
         setJobs(response.data);
       } catch (error) {
         console.error("Error fetching jobs:", error);
@@ -54,7 +51,7 @@ export default function JobsTab() {
       }
     };
     fetchJobs();
-  }, [apiClient, user]);
+  }, [user]);
 
   const handleOnClick = () => {
     router.push("/dashboard/organization/jobs/new");

@@ -1,23 +1,33 @@
 "use client";
 import Header from "@/components/Header";
 import Spinner from "@/components/Spinner";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import useAxiosInterceptor from "@/utils/http-interceptor";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import clsx from "clsx";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 
 interface Job {
   title: string;
   description: string;
 }
+
 export default function JobPage() {
   const { id } = useParams();
   const { user, isLoading } = useUser();
   const [isFetching, setIsFetching] = useState(false);
-  const apiClient = useAxiosInterceptor();
-
   const [job, setJob] = useState<Job | null>(null);
+  const router = useRouter();
+  const apiClient = useAxiosInterceptor();
 
   useEffect(() => {
     const fetchJob = async () => {
@@ -25,14 +35,11 @@ export default function JobPage() {
 
       setIsFetching(true);
       try {
-        const response = await apiClient.get(
-          `/functions/v1/jobs/${id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${user.accessToken}`,
-            },
-          }
-        );
+        const response = await apiClient.get(`/functions/v1/jobs/${id}`, {
+          headers: {
+            Authorization: `Bearer ${user.accessToken}`,
+          },
+        });
         setJob(response.data);
       } catch (error) {
         console.error("Error fetching job:", error);
@@ -42,7 +49,12 @@ export default function JobPage() {
     };
 
     fetchJob();
-  }, [apiClient, id, user]);
+  }, [id, user]);
+
+  function onApply(event: React.MouseEvent<HTMLButtonElement>): void {
+    event.preventDefault();
+    router.push(`/jobs/${id}/apply`);
+  }
 
   return (
     <div
@@ -51,7 +63,7 @@ export default function JobPage() {
         !isLoading ? "animate-fade-in" : "opacity-0"
       )}
     >
-      <Header isSidebarOpen />
+      <Header/>
       <main className="flex flex-grow overflow-y-hidden">
         <section className="flex-grow p-4 bg-white">
           <div className="flex flex-col items-start justify-center h-auto p-6 overflow-y-auto">
@@ -60,14 +72,19 @@ export default function JobPage() {
                 <Spinner />
               </div>
             ) : job ? (
-              <div className="bg-white shadow-lg rounded-lg p-4 w-full">
-                <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
-                  {job.title}
-                </h2>
-                <p className="text-gray-500 dark:text-gray-300 mt-2">
-                  {job.description}
-                </p>
-              </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>{job.title}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription>{job.description}</CardDescription>
+                </CardContent>
+                <CardFooter>
+                  <Button className="btn btn-primary" onClick={onApply}>
+                    Apply
+                  </Button>
+                </CardFooter>
+              </Card>
             ) : (
               <p className="text-gray-600 dark:text-gray-400 mt-4">
                 No job available.

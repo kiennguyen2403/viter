@@ -18,14 +18,11 @@ export default function InfoTab() {
       try {
         if (!user) return;
         setIsFetching(true);
-        const response = await apiClient.get(
-          `/functions/v1/companies`,
-          {
-            headers: {
-              Authorization: `Bearer ${user.accessToken}`,
-            },
-          }
-        );
+        const response = await apiClient.get(`/functions/v1/companies`, {
+          headers: {
+            Authorization: `Bearer ${user.accessToken}`,
+          },
+        });
         setOrganization(response.data);
       } catch (error) {
         console.error("Error fetching organization:", error);
@@ -34,7 +31,7 @@ export default function InfoTab() {
       }
     };
     fetchOrganization();
-  }, [apiClient, user]);
+  }, [user]);
 
   return (
     <div className="w-full h-full flex-1 justify-center items-center">
