@@ -1,37 +1,55 @@
-import axios from 'axios';
+import axios from "axios";
+import { useUser } from "@auth0/nextjs-auth0/client";
 
-const axiosInstance = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_API_URL, // Set your API base URL
-    timeout: 5000, // Set a timeout
-});
+const useAxiosInterceptor = () => {
+    const { user } = useUser(); // Use the hook inside this custom hook
 
-// Request Interceptor
-axiosInstance.interceptors.request.use(
-    (config) => {
-        // Add authentication token, headers, or modify the request config
-        const token = localStorage.getItem('token');
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-    },
-    (error) => {
-        // Handle request error
-        return Promise.reject(error);
-    }
-);
+    const apiClient = axios.create({
+        baseURL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+        timeout: 20000,
+        headers: {
+            "Content-Type": "application/json",
+        },
+    });
 
-// Response Interceptor
-axiosInstance.interceptors.response.use(
-    (response) => response,
-    (error) => {
-        // Handle errors globally, e.g., refresh token or redirect on 401
-        if (error.response?.status === 401) {
-            // Handle unauthorized access, e.g., redirect to login
-            window.location.href = '/login';
-        }
-        return Promise.reject(error);
-    }
-);
+    // Add interceptors
+    apiClient.interceptors.request.use(
+        (config) => {
+            if (user?.token) {
+                // Attach user token to the Authorization header
+                config.headers.Authorization = `Bearer ${user.token}`;
+            }
+            return config;
+        },
+        (error) => Promise.reject(error),
+    );
 
-export default axiosInstance;
+    apiClient.interceptors.response.use(
+        (response) => response,
+        (error) => {
+            console.error("Error response", error.response);
+            // Handle errors globally, e.g., refresh token or redirect on 401
+            switch (error?.response?.status) {
+                case 401:
+                    // Redirect to login page
+                    break;
+                case 403:
+                    // Redirect to forbidden page
+                    break;
+                case 404:
+                    // Redirect to not found page
+                    break;
+                case 500:
+                    // Redirect to server error page
+                    break;
+                default:
+                    break;
+            }
+            return Promise.reject(error);
+        },
+    );
+
+    return apiClient;
+};
+
+export default useAxiosInterceptor;

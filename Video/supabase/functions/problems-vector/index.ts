@@ -9,7 +9,7 @@ import { Supabase } from "../utils/supabase.ts";
 import pdf from "pdf-parse"
 import { STATUS } from "../type/type.ts";
 import { corsHeaders } from "../_shared/cors.ts";
-import OpenAI from "openai";
+import OpenAI from "openai/mod.ts";
 
 Deno.serve(async (req) => {
   try {

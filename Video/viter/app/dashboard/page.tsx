@@ -61,6 +61,7 @@ import {
 import { AppContext, MEETING_ID_REGEX } from "@/contexts/AppProvider";
 import { API_KEY, CALL_TYPE } from "@/contexts/MeetProvider";
 import { useRouter } from "next/navigation";
+import useAxiosInterceptor from "@/utils/http-interceptor";
 
 // Interfaces
 interface Meeting {
@@ -87,6 +88,7 @@ const Page = () => {
   const { user, isLoading } = useUser();
   const { setNewMeeting } = useContext(AppContext);
   const router = useRouter();
+  const apiClient = useAxiosInterceptor();
 
   // State
   const [isMeetingLoading, setIsMeetingLoading] = useState(true);
@@ -127,8 +129,8 @@ const Page = () => {
     description?: string
   ) => {
     try {
-      await axios.post(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/meetings/`,
+      await apiClient.post(
+        `/functions/v1/meetings/`,
         {
           title,
           description: description || "",
@@ -147,8 +149,8 @@ const Page = () => {
 
   const updateParticipantStatus = async (meetingId: string) => {
     try {
-      await axios.put(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/participants`,
+      await apiClient.put(
+        `/functions/v1/participants`,
         {
           status: "STAND_BY",
         },
@@ -258,7 +260,7 @@ const Page = () => {
         if (!user?.accessToken) return;
         setIsMeetingLoading(true);
 
-        const meetingResponses = await axios.get(
+        const meetingResponses = await apiClient.get(
           `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/meetings`,
           {
             headers: { Authorization: `Bearer ${user?.accessToken || ""}` },

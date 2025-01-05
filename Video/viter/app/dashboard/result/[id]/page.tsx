@@ -15,7 +15,6 @@ import {
 } from "recharts";
 import { ChartConfig, ChartContainer } from "@/components/ui/chart";
 import Review from "@/components/icons/Review";
-import axios from "axios";
 import {
   Table,
   TableBody,
@@ -26,6 +25,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import Spinner from "@/components/Spinner";
+import useAxiosInterceptor from "@/utils/http-interceptor";
 
 // Configuration for the RadarChart colors and labels
 const chartConfig = {
@@ -63,6 +63,7 @@ const Page = () => {
   const [isFetching, setIsFetching] = useState(true);
   const [role, setRole] = useState<string | null>(null);
   const { user, isLoading } = useUser();
+  const apiClient = useAxiosInterceptor();
 
   useEffect(() => {
     // Fetch user role data if user is available
@@ -70,14 +71,11 @@ const Page = () => {
       if (!user) return;
       try {
         setIsFetching(true);
-        const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/users/me`,
-          {
-            headers: {
-              Authorization: `Bearer ${user.accessToken}`,
-            },
-          }
-        );
+        const response = await apiClient.get(`/functions/v1/users/me`, {
+          headers: {
+            Authorization: `Bearer ${user.accessToken}`,
+          },
+        });
         setRole(response.data.role);
       } catch (error) {
         console.error("Error fetching data: ", error);

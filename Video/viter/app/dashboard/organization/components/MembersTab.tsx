@@ -20,8 +20,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import useAxiosInterceptor from "@/utils/http-interceptor";
 import { useUser } from "@auth0/nextjs-auth0/client";
-import axios from "axios";
 import { useEffect, useState } from "react";
 
 interface Members {
@@ -36,20 +36,18 @@ export default function MembersTab() {
   const [isOpened, setIsOpened] = useState(false);
   const [inviteLink, setInviteLink] = useState("");
   const { user, isLoading } = useUser();
+  const apiClient = useAxiosInterceptor();
 
   useEffect(() => {
     const fetchMembers = async () => {
       try {
         if (!user) return;
         setIsFetching(true);
-        const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/members`,
-          {
-            headers: {
-              Authorization: `Bearer ${user.accessToken}`,
-            },
-          }
-        );
+        const response = await apiClient.get(`/functions/v1/members`, {
+          headers: {
+            Authorization: `Bearer ${user.accessToken}`,
+          },
+        });
         setMembers(response.data);
       } catch (error) {
         console.error("Error fetching members:", error);
@@ -65,14 +63,11 @@ export default function MembersTab() {
     try {
       if (!user) return;
       setIsFetching(true);
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/invite`,
-        {
-          headers: {
-            Authorization: `Bearer ${user.accessToken}`,
-          },
-        }
-      );
+      const response = await apiClient.get(`/functions/v1/invite`, {
+        headers: {
+          Authorization: `Bearer ${user.accessToken}`,
+        },
+      });
       setInviteLink(response.data);
       setIsOpened(true);
     } catch (error) {

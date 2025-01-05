@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { useEffect, useState, ReactNode } from "react";
 import { useUser } from "@auth0/nextjs-auth0/client";
-import axios from "axios";
 import { BellIcon, CalendarIcon } from "@radix-ui/react-icons";
 import { cn } from "@/lib/utils";
 import {
@@ -14,6 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
+import useAxiosInterceptor from "@/utils/http-interceptor";
 
 interface Meeting {
   occurred_at: string | number | Date;
@@ -33,13 +33,14 @@ const Page = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const searchParams = useSearchParams();
   const token = searchParams.get("code");
+  const apiClient = useAxiosInterceptor();
 
   const handleUpdateParticipant = async (meetingId: string, status: string) => {
     if (!user || !token) return;
     try {
       setIsUpdatingParticipant(true);
-      await axios.post(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/invite-participant`,
+      await apiClient.post(
+        `/functions/v1/invite-participant`,
         {
           meetingId,
           status,
@@ -71,7 +72,7 @@ const Page = () => {
         setIsFetchingMeeting(true);
         const {
           data: { participant, meetingId },
-        } = await axios.post(
+        } = await apiClient.post(
           `/api/validate-participant`,
           {
             inviteCode: token,
@@ -87,7 +88,7 @@ const Page = () => {
           setIsFetchingMeeting(false);
           return;
         }
-        const response = await axios.get(
+        const response = await apiClient.get(
           `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/meetings?nanoid=${meetingId}`,
           {
             headers: {
